@@ -220,11 +220,11 @@ app.get('/tengerimalac-jatek', async (req, res) => {
         }
         let jatekosNev = '${allapot.jatekosNev}';
         
-        const bejelentkezve = JSON.parse(localStorage.getItem('bejelentkezve') || 'null');
+        const bejelentkezveJatek = JSON.parse(localStorage.getItem('bejelentkezve') || 'null');
         const startSection = document.getElementById('start-section');
         
-        if (bejelentkezve) {
-          jatekosNev = bejelentkezve.felhasznalonev;
+        if (bejelentkezveJatek) {
+          jatekosNev = bejelentkezveJatek.felhasznalonev;
           startSection.innerHTML = '<button class="gomb" onclick="ketrec()">Játék Indítása (' + jatekosNev + ')</button>';
           fetch('/jatek-nev-mentes', {
             method: 'POST',
