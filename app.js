@@ -398,9 +398,6 @@ app.get('/a_weboldalrol', (req, res) => {
 app.get('/jatekok', (req, res) => {
   res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🎮 Játékok</h1><p style="text-align: center;">Válassz egy játékot és jó szórakozást!</p><div style="text-align: center; margin-top: 30px;">' +
     '<a href="/tengerimalac-jatek" class="game-button"><span class="emoji">🐹</span>Tengerimalac Kaland</a>' +
-    '<a href="/tetris" class="game-button"><span class="emoji">🟦</span>Tetris</a>' +
-    '<a href="/snake" class="game-button"><span class="emoji">🐍</span>Snake</a>' +
-    '<a href="/labirintus" class="game-button"><span class="emoji">🎯</span>Labirintus</a></div></div>');
 });
 app.get('/bejelentkezes', (req, res) => {
   const html = `
