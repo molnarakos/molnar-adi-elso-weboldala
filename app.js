@@ -1,5 +1,6 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
+const schedule = require('node-schedule');
 const app = express();
 
 const port = process.env.PORT || 3000;
@@ -22,12 +23,25 @@ MongoClient.connect(mongoUrl)
     db = client.db(dbName);
     uzenetekCollection = db.collection('uzenetek');
     jatekAllapotCollection = db.collection('jatek_allapot');
+    scheduleMessageWallReset();
   })
   .catch(error => {
     console.error('MongoDB kapcsolódási hiba:', error);
     console.log('Az oldal MongoDB nélkül fut.');
   });
 
+// ⭐ ÜZENŐFAL RESETELÉS FÜGGVÉNY
+function scheduleMessageWallReset() {
+  schedule.scheduleJob('0 0 * * *', async () => {
+    try {
+      const deletedCount = await uzenetekCollection.deleteMany({});
+      console.log(`✅ Üzenőfal resetelve! ${deletedCount.deletedCount} üzenet törölve. Idő: ${new Date().toLocaleString('hu-HU')}`);
+    } catch (error) {
+      console.error('❌ Hiba az üzenőfal resetelése közben:', error);
+    }
+  });
+  console.log('📅 Üzenőfal reset ütemezve minden nap 00:00-kor');
+}
 function getStyle() {
   return `
     <style>
@@ -108,7 +122,6 @@ function getStyle() {
     </style>
   `;
 }
-
 function getMenu() {
   return `
     <nav>
@@ -199,8 +212,6 @@ function getChatbotWidget() {
         font-size: 24px;
         cursor: pointer;
         padding: 0;
-        width: 30px;
-        height: 30px;
       }
       #chatbot-messages {
         flex: 1;
@@ -215,17 +226,6 @@ function getChatbotWidget() {
         padding: 12px 16px;
         border-radius: 15px;
         word-wrap: break-word;
-        animation: slideIn 0.3s ease;
-      }
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
       }
       .chat-message.user {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -254,7 +254,6 @@ function getChatbotWidget() {
         border-radius: 10px;
         background: #1a1a2e;
         color: white;
-        font-size: 14px;
       }
       #chatbot-input:focus {
         outline: none;
@@ -269,21 +268,10 @@ function getChatbotWidget() {
         border-radius: 10px;
         cursor: pointer;
         font-weight: bold;
-        transition: all 0.3s;
       }
       #chatbot-send:hover {
         transform: scale(1.05);
         box-shadow: 0 4px 15px rgba(0, 212, 255, 0.5);
-      }
-      #chatbot-messages::-webkit-scrollbar {
-        width: 8px;
-      }
-      #chatbot-messages::-webkit-scrollbar-track {
-        background: #1a1a2e;
-      }
-      #chatbot-messages::-webkit-scrollbar-thumb {
-        background: #667eea;
-        border-radius: 10px;
       }
     </style>
     
@@ -314,13 +302,8 @@ function getChatbotWidget() {
         const send = document.getElementById('chatbot-send');
         const messages = document.getElementById('chatbot-messages');
         
-        toggle.addEventListener('click', () => {
-          container.classList.toggle('active');
-        });
-        
-        close.addEventListener('click', () => {
-          container.classList.remove('active');
-        });
+        toggle.addEventListener('click', () => { container.classList.toggle('active'); });
+        close.addEventListener('click', () => { container.classList.remove('active'); });
         
         function addMessage(text, isUser) {
           const msg = document.createElement('div');
@@ -332,57 +315,26 @@ function getChatbotWidget() {
         
         function getBotResponse(userMessage) {
           const lower = userMessage.toLowerCase();
-          
-          if (lower.includes('szia') || lower.includes('hello') || lower.includes('helló')) {
-            return 'Szia! 😊 Miben segíthetek ma?';
-          } else if (lower.includes('hogy vagy')) {
-            return 'Nagyon jól vagyok, köszönöm! 🤖 És te?';
-          } else if (lower.includes('ki vagy')) {
-            return 'Claude vagyok, egy AI asszisztens! Az Anthropic készített. 🧠';
-          } else if (lower.includes('segít')) {
-            return 'Persze! Segíthetek programozásban, kérdésekre válaszolni, vagy csak beszélgetni! 💬';
-          } else if (lower.includes('kösz') || lower.includes('köszön')) {
-            return 'Szívesen! 😊 Bármikor!';
-          } else if (lower.includes('viszlát') || lower.includes('bye')) {
-            return 'Viszlát! Jó napot! 👋';
-          } else if (lower.includes('játék') || lower.includes('game')) {
-            return 'Próbáld ki a Tengerimalac Kaland játékot! 🐹 Vagy a többi játékot a Játékok menüben! 🎮';
-          } else if (lower.includes('oldal')) {
-            return 'Ez egy szuper weboldal amit egy 8 éves programozó csinált! Nézz körül! 🌟';
-          } else {
-            const responses = [
-              'Érdekes kérdés! 🤔 Mondj többet!',
-              'Értem! Fejlesztenek engem, hogy még okosabb legyek! 🚀',
-              'Demo módban vagyok, de hamarosan teljes Claude AI leszek! 🤖',
-              'Figyelek! 👂 Folytasd!',
-              'Jó kérdés! Mit gondolsz erről? 💭'
-            ];
-            return responses[Math.floor(Math.random() * responses.length)];
-          }
+          if (lower.includes('szia') || lower.includes('hello')) return 'Szia! 😊';
+          if (lower.includes('hogy vagy')) return 'Jól vagyok! 🤖';
+          if (lower.includes('ki vagy')) return 'Claude vagyok! 🧠';
+          return 'Érdekes! 🤔';
         }
         
         function handleSend() {
           const text = input.value.trim();
           if (!text) return;
-          
           addMessage(text, true);
           input.value = '';
-          
-          setTimeout(() => {
-            const response = getBotResponse(text);
-            addMessage(response, false);
-          }, 500);
+          setTimeout(() => { addMessage(getBotResponse(text), false); }, 500);
         }
         
         send.addEventListener('click', handleSend);
-        input.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') handleSend();
-        });
+        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
       })();
     </script>
   `;
 }
-
 app.get('/', (req, res) => {
   res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🌟 Üdvözöllek a weboldalamon!</h1><p style="text-align: center; font-size: 20px;">Használd a menüt fent, hogy felfedezd az oldalaimat!</p></div>');
 });
@@ -402,6 +354,7 @@ app.get('/jatekok', (req, res) => {
     '<a href="/snake" class="game-button"><span class="emoji">🐍</span>Snake</a>' +
     '<a href="/labirintus" class="game-button"><span class="emoji">🎯</span>Labirintus</a></div></div>');
 });
+
 app.get('/bejelentkezes', (req, res) => {
   const html = `
     ${getMenu()}
@@ -463,6 +416,95 @@ app.get('/bejelentkezes', (req, res) => {
   res.send(html);
 });
 
+app.get('/tengerimalac-jatek', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🐹 Tengerimalac Kaland</h1><p>A játék hamarosan elérhető lesz!</p></div>');
+});
+
+app.get('/tetris', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🟦 Tetris</h1><p>A játék hamarosan elérhető lesz!</p></div>');
+});
+
+app.get('/snake', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🐍 Snake</h1><p>A játék hamarosan elérhető lesz!</p></div>');
+});
+
+app.get('/labirintus', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🎯 Labirintus</h1><p>A játék hamarosan elérhető lesz!</p></div>');
+});
+
+app.get('/kijelentkezes', (req, res) => {
+  res.send(`
+    ${getMenu()}
+    ${getStyle()}
+    ${getChatbotWidget()}
+    <div class="container">
+      <h1 style="color: #667eea;">👋 Kijelentkezés...</h1>
+    </div>
+    <script>
+      localStorage.removeItem('bejelentkezve');
+      setTimeout(() => { window.location.href = '/'; }, 1000);
+    </script>
+  `);
+});
+app.post('/api/register', async (req, res) => {
+  try {
+    const { felhasznalonev, jelszo, profilkep } = req.body;
+    const letezik = await db.collection('users').findOne({ felhasznalonev });
+    
+    if (letezik) {
+      return res.json({ siker: false, uzenet: 'Ez a felhasználónév már foglalt!' });
+    }
+    
+    const ujFelhasznalo = {
+      felhasznalonev,
+      jelszo,
+      profilkep: profilkep || null,
+      letrehozva: new Date()
+    };
+    
+    await db.collection('users').insertOne(ujFelhasznalo);
+    console.log('Új felhasználó regisztrálva:', felhasznalonev);
+    res.json({ siker: true });
+    
+  } catch (error) {
+    console.error('Regisztrációs hiba:', error);
+    res.json({ siker: false, uzenet: 'Szerver hiba történt!' });
+  }
+});
+
+app.post('/api/login', async (req, res) => {
+  try {
+    const { felhasznalonev, jelszo } = req.body;
+    const felhasznalo = await db.collection('users').findOne({ felhasznalonev, jelszo });
+    
+    if (!felhasznalo) {
+      return res.send(getMenu() + getStyle() + getChatbotWidget() + '<div class="container"><h1 style="color: red;">❌ Sikertelen bejelentkezés!</h1><p>Hibás felhasználónév vagy jelszó.</p><a href="/bejelentkezes" style="color: #667eea; font-weight: bold;">← Próbáld újra</a></div>');
+    }
+    
+    res.send(`
+      ${getMenu()}
+      ${getStyle()}
+      ${getChatbotWidget()}
+      <div class="container">
+        <h1 style="color: green;">✅ Sikeres bejelentkezés!</h1>
+        <p>Üdvözöllek, <strong>${felhasznalo.felhasznalonev}</strong>!</p>
+        <p>Átirányítás...</p>
+      </div>
+      <script>
+        localStorage.setItem('bejelentkezve', JSON.stringify({
+          felhasznalonev: '${felhasznalo.felhasznalonev}',
+          profilkep: ${felhasznalo.profilkep ? `'${felhasznalo.profilkep}'` : 'null'}
+        }));
+        setTimeout(() => { window.location.href = '/'; }, 1500);
+      </script>
+    `);
+    
+  } catch (error) {
+    console.error('Bejelentkezési hiba:', error);
+    res.send(getMenu() + getStyle() + getChatbotWidget() + '<div class="container"><h1 style="color: red;">❌ Hiba történt!</h1></div>');
+  }
+});
+
 app.get('/regisztracio', (req, res) => {
   const html = `
     ${getMenu()}
@@ -493,7 +535,6 @@ app.get('/regisztracio', (req, res) => {
         text-align: center;
         cursor: pointer;
       }
-      .preview-container { margin: 20px 0; text-align: center; }
       .preview-img {
         width: 150px;
         height: 150px;
@@ -501,6 +542,7 @@ app.get('/regisztracio', (req, res) => {
         object-fit: cover;
         border: 3px solid #667eea;
         display: none;
+        margin: 10px auto;
       }
       .default-avatar {
         width: 150px;
@@ -513,7 +555,7 @@ app.get('/regisztracio', (req, res) => {
         color: white;
         font-size: 60px;
         font-weight: bold;
-        margin: 0 auto;
+        margin: 10px auto;
       }
       .reg-btn {
         width: 100%;
@@ -528,16 +570,6 @@ app.get('/regisztracio', (req, res) => {
         margin-top: 10px;
       }
       .reg-btn:hover { background: #5568d3; }
-      .switch-link {
-        text-align: center;
-        margin-top: 20px;
-        color: #667eea;
-      }
-      .switch-link a {
-        color: #667eea;
-        font-weight: bold;
-        text-decoration: underline;
-      }
       .error-msg {
         color: red;
         text-align: center;
@@ -557,7 +589,7 @@ app.get('/regisztracio', (req, res) => {
         </div>
         <input type="file" id="profilkep" accept="image/png,image/jpeg" style="display: none;" onchange="previewImage(event)">
         
-        <div class="preview-container">
+        <div style="text-align: center;">
           <p><strong>Így fog kinézni:</strong></p>
           <img id="preview" class="preview-img" alt="Előnézet">
           <div id="defaultAvatar" class="default-avatar">?</div>
@@ -567,8 +599,8 @@ app.get('/regisztracio', (req, res) => {
         
         <button type="submit" class="reg-btn">Regisztráció</button>
       </form>
-      <div class="switch-link">
-        Van már fiókod? <a href="/bejelentkezes">Jelentkezz be itt!</a>
+      <div style="text-align: center; margin-top: 20px; color: #667eea;">
+        Van már fiókod? <a href="/bejelentkezes" style="color: #667eea; font-weight: bold;">Jelentkezz be itt!</a>
       </div>
     </div>
     
@@ -643,80 +675,6 @@ app.get('/regisztracio', (req, res) => {
     </script>
   `;
   res.send(html);
-});
-
-app.post('/api/register', async (req, res) => {
-  try {
-    const { felhasznalonev, jelszo, profilkep } = req.body;
-    const letezik = await db.collection('users').findOne({ felhasznalonev });
-    
-    if (letezik) {
-      return res.json({ siker: false, uzenet: 'Ez a felhasználónév már foglalt!' });
-    }
-    
-    const ujFelhasznalo = {
-      felhasznalonev,
-      jelszo,
-      profilkep: profilkep || null,
-      letrehozva: new Date()
-    };
-    
-    await db.collection('users').insertOne(ujFelhasznalo);
-    console.log('Új felhasználó regisztrálva:', felhasznalonev);
-    res.json({ siker: true });
-    
-  } catch (error) {
-    console.error('Regisztrációs hiba:', error);
-    res.json({ siker: false, uzenet: 'Szerver hiba történt!' });
-  }
-});
-
-app.post('/api/login', async (req, res) => {
-  try {
-    const { felhasznalonev, jelszo } = req.body;
-    const felhasznalo = await db.collection('users').findOne({ felhasznalonev, jelszo });
-    
-    if (!felhasznalo) {
-      return res.send(getMenu() + getStyle() + getChatbotWidget() + '<div class="container"><h1 style="color: red;">❌ Sikertelen bejelentkezés!</h1><p>Hibás felhasználónév vagy jelszó.</p><a href="/bejelentkezes" style="color: #667eea; font-weight: bold;">← Próbáld újra</a></div>');
-    }
-    
-    res.send(`
-      ${getMenu()}
-      ${getStyle()}
-      ${getChatbotWidget()}
-      <div class="container">
-        <h1 style="color: green;">✅ Sikeres bejelentkezés!</h1>
-        <p>Üdvözöllek, <strong>${felhasznalo.felhasznalonev}</strong>!</p>
-        <p>Átirányítás...</p>
-      </div>
-      <script>
-        localStorage.setItem('bejelentkezve', JSON.stringify({
-          felhasznalonev: '${felhasznalo.felhasznalonev}',
-          profilkep: ${felhasznalo.profilkep ? `'${felhasznalo.profilkep}'` : 'null'}
-        }));
-        setTimeout(() => { window.location.href = '/'; }, 1500);
-      </script>
-    `);
-    
-  } catch (error) {
-    console.error('Bejelentkezési hiba:', error);
-    res.send(getMenu() + getStyle() + getChatbotWidget() + '<div class="container"><h1 style="color: red;">❌ Hiba történt!</h1></div>');
-  }
-});
-
-app.get('/kijelentkezes', (req, res) => {
-  res.send(`
-    ${getMenu()}
-    ${getStyle()}
-    ${getChatbotWidget()}
-    <div class="container">
-      <h1 style="color: #667eea;">👋 Kijelentkezés...</h1>
-    </div>
-    <script>
-      localStorage.removeItem('bejelentkezve');
-      setTimeout(() => { window.location.href = '/'; }, 1000);
-    </script>
-  `);
 });
 app.get('/uzenofal', async (req, res) => {
   try {
@@ -806,10 +764,6 @@ app.post('/uj-uzenet', async (req, res) => {
   }
 });
 
-app.get('/tengerimalac-jatek', async (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🐹 Tengerimalac Kaland</h1><p>A játék hamarosan elérhető lesz!</p></div>');
-});
-
 app.post('/jatek-nev-mentes', async (req, res) => {
   try {
     const { sessionId, jatekosNev } = req.body;
@@ -822,18 +776,6 @@ app.post('/jatek-nev-mentes', async (req, res) => {
   } catch (error) {
     res.json({ sikeres: false });
   }
-});
-
-app.get('/tetris', (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🟦 Tetris</h1><p>A játék hamarosan elérhető lesz!</p></div>');
-});
-
-app.get('/snake', (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🐍 Snake</h1><p>A játék hamarosan elérhető lesz!</p></div>');
-});
-
-app.get('/labirintus', (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🎯 Labirintus</h1><p>A játék hamarosan elérhető lesz!</p></div>');
 });
 
 app.post('/jatek-mentes', async (req, res) => {
@@ -870,3 +812,6 @@ app.post('/jatek-mentes', async (req, res) => {
     res.json({ sikeres: false });
   }
 });
+
+// ÜZENŐFAL RESETELÉS MINDEN NAP 00:00-KOR
+// A kód az elejében már van a scheduleMessageWallReset() függvénnyel!
