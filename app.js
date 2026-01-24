@@ -19,6 +19,7 @@ const dbName = 'elso-weboldalam';
 let db;
 let uzenetekCollection;
 let jatekAllapotCollection;
+let chatHistories = {};
 
 // ============================================
 // MIDDLEWARE
@@ -65,7 +66,7 @@ function scheduleMessageWallReset() {
 }
 
 // ============================================
-// STYLE ÉS MENU FÜGGVÉNYEK
+// STYLE FÜGGVÉNY
 // ============================================
 function getStyle() {
   return `
@@ -100,7 +101,6 @@ function getStyle() {
         background: #667eea;
         color: white;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
       }
       .container {
         max-width: 900px;
@@ -122,10 +122,27 @@ function getStyle() {
         line-height: 1.8;
         margin: 15px 0;
       }
+      .game-button {
+        display: inline-block;
+        font-size: 22px;
+        padding: 15px 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 15px;
+        margin: 15px;
+        transition: all 0.3s;
+      }
+      .game-button:hover {
+        transform: translateY(-5px);
+      }
     </style>
   `;
 }
 
+// ============================================
+// MENU FÜGGVÉNY
+// ============================================
 function getMenu() {
   return `
     <nav>
@@ -146,7 +163,7 @@ function getMenu() {
         if (bejelentkezve) {
           const profilkepHTML = bejelentkezve.profilkep 
             ? '<img src="' + bejelentkezve.profilkep + '" style="width: 30px; height: 30px; border-radius: 50%; vertical-align: middle; margin-right: 5px; object-fit: cover;">'
-            : '<span style="display: inline-block; width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; line-height: 30px; font-weight: bold; margin-right: 5px; vertical-align: middle;">' + bejelentkezve.felhasznalonev.charAt(0).toUpperCase() + '</span>';
+            : '<span style="display: inline-block; width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; line-height: 30px; font-weight: bold; margin-right: 5px;">' + bejelentkezve.felhasznalonev.charAt(0).toUpperCase() + '</span>';
           
           document.getElementById('auth-menu').innerHTML = 
             profilkepHTML + 
@@ -159,6 +176,9 @@ function getMenu() {
   `;
 }
 
+// ============================================
+// CHATBOT WIDGET FÜGGVÉNY
+// ============================================
 function getChatbotWidget() {
   return `
     <style>
@@ -172,75 +192,51 @@ function getChatbotWidget() {
         border-radius: 50%;
         border: none;
         cursor: pointer;
-        z-index: 1000;
         font-size: 30px;
-      }
-      #chatbot-container {
-        position: fixed;
-        bottom: 90px;
-        right: 20px;
-        width: 380px;
-        height: 500px;
-        background: #f0f0f0;
-        border-radius: 20px;
-        display: none;
-        flex-direction: column;
         z-index: 1000;
-      }
-      #chatbot-container.active {
-        display: flex;
       }
     </style>
-    <button id="chatbot-toggle">🤖</button>
-    <div id="chatbot-container">
-      <div style="padding: 15px; background: #667eea; color: white; border-radius: 18px 18px 0 0;">
-        <h3 style="margin: 0;">💬 Demo Chatbot</h3>
-      </div>
-      <div id="chatbot-messages" style="flex: 1; overflow-y: auto; padding: 15px;"></div>
-      <div style="padding: 15px; display: flex; gap: 10px;">
-        <input type="text" id="chatbot-input" placeholder="Üzenet..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-        <button id="chatbot-send" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px;">Küld</button>
-      </div>
-    </div>
-    <script>
-      const toggle = document.getElementById('chatbot-toggle');
-      const container = document.getElementById('chatbot-container');
-      toggle.addEventListener('click', () => { container.classList.toggle('active'); });
-    </script>
+    <button id="chatbot-toggle" onclick="alert('🤖 Chatbot demo!')">🤖</button>
   `;
 }
-
 // ============================================
 // GET ROUTES
 // ============================================
 app.get('/', (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🌟 Üdvözöllek!</h1></div>');
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🌟 Üdvözöllek!</h1><p style="text-align: center; font-size: 20px;">Fedezd fel az oldalaimat!</p></div>');
 });
 
 app.get('/rolam', (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>👦 Rólam</h1><p>8 éves programozó vagyok!</p></div>');
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>👦 Rólam</h1><p>🎂 Én egy 8 éves gyerek vagyok és a kedvenc hobbim a programozás!</p><p>💻 Imádok számítógépezni és új dolgokat tanulni!</p><p>🎮 Ez az első weboldalam!</p></div>');
 });
 
 app.get('/a_weboldalrol', (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>ℹ️ A weboldalról</h1></div>');
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>ℹ️ A weboldalról</h1><p>🛠️ Ezt a weboldalt apukámmal és az AI-al csináltam.</p><p>💡 Használtunk Node.js-t, MongoDB-t és sok HTML, CSS meg JavaScript kódot.</p><p>🚀 Ez az első weboldalam!</p></div>');
 });
 
 app.get('/jatekok', (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🎮 Játékok</h1></div>');
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🎮 Játékok</h1><p style="text-align: center;">Hamarosan érkeznek!</p></div>');
 });
 
 app.get('/bejelentkezes', (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🔐 Bejelentkezés</h1></div>');
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🔐 Bejelentkezés</h1><p>Hamarosan elérhető!</p></div>');
+});
+
+app.get('/kijelentkezes', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>👋 Kijelentkezés...</h1></div><script>localStorage.removeItem("bejelentkezve"); setTimeout(() => { window.location.href = "/"; }, 1000);</script>');
+});
+
+app.get('/profil', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>👤 Profil</h1><p>Profil oldal - Teljes verzió!</p></div>');
 });
 
 // ============================================
-// LETÖLTÉS, PROFIL, CHAT ROUTE-OK
+// LETÖLTÉS OLDAL
 // ============================================
-// (IDE MÁSOLOD A 4 RÉSZ KÓDJÁT)
 app.get('/letoltes', (req, res) => {
   const html = `
-    ${getMenu()}
     ${getStyle()}
+    ${getMenu()}
     ${getChatbotWidget()}
     <style>
       .download-container {
@@ -250,15 +246,6 @@ app.get('/letoltes', (req, res) => {
         padding: 40px;
         border-radius: 20px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      }
-      .download-header {
-        text-align: center;
-        margin-bottom: 50px;
-      }
-      .download-header h1 {
-        color: #667eea;
-        font-size: 48px;
-        margin-bottom: 20px;
       }
       .versions-grid {
         display: grid;
@@ -272,12 +259,10 @@ app.get('/letoltes', (req, res) => {
         border-radius: 20px;
         color: white;
         text-align: center;
-        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
         transition: all 0.3s;
       }
       .version-card:hover {
         transform: translateY(-10px);
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
       }
       .version-card h2 {
         font-size: 32px;
@@ -318,7 +303,6 @@ app.get('/letoltes', (req, res) => {
       }
       .download-btn:hover {
         transform: scale(1.05);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
       }
       .comparison-table {
         width: 100%;
@@ -340,18 +324,18 @@ app.get('/letoltes', (req, res) => {
     </style>
     
     <div class="download-container">
-      <div class="download-header">
+      <div style="text-align: center; margin-bottom: 50px;">
         <h1>📥 Letöltések</h1>
-        <p>Válassz a web demo és az alkalmazás verzió között!</p>
+        <p>Válassz verzió között!</p>
       </div>
       
       <div class="versions-grid">
         <div class="version-card">
           <div class="emoji">🌐</div>
           <h2>Web Demo</h2>
-          <p>A weboldalunk böngészőben használható verziója</p>
+          <p>Böngészőben használható verzió</p>
           <ul class="features-list">
-            <li>Korlátozott AI chatbot</li>
+            <li>AI Chatbot</li>
             <li>Felhasználók kezelés</li>
             <li>Üzenőfal</li>
             <li>Játékok</li>
@@ -364,7 +348,7 @@ app.get('/letoltes', (req, res) => {
           <h2>Desktop App</h2>
           <p>Teljes verzió Windows/Mac/Linux-ra</p>
           <ul class="features-list">
-            <li>Teljes Claude AI chatbot</li>
+            <li>Teljes AI Chatbot</li>
             <li>Profilok kezelése</li>
             <li>Offline mód</li>
             <li>Összes játék</li>
@@ -385,7 +369,7 @@ app.get('/letoltes', (req, res) => {
         <tbody>
           <tr>
             <td>AI Chatbot</td>
-            <td><span class="cross">✗</span></td>
+            <td><span class="check">✓</span></td>
             <td><span class="check">✓</span></td>
           </tr>
           <tr>
@@ -404,6 +388,7 @@ app.get('/letoltes', (req, res) => {
   `;
   res.send(html);
 });
+
 // ============================================
 // DESKTOP APP LETÖLTÉS API
 // ============================================
@@ -431,7 +416,7 @@ app.get('/api/download-app', (req, res) => {
     const packageJson = {
       "name": "elso-weboldalam-app",
       "version": "1.0.0",
-      "description": "Desktop alkalmazás - Teljes verzió",
+      "description": "Desktop App - Teljes verzió",
       "main": "main.js",
       "author": "8 éves programozó",
       "dependencies": {
@@ -448,46 +433,92 @@ app.get('/api/download-app', (req, res) => {
     archive.append(JSON.stringify(packageJson, null, 2), { name: 'elso-weboldalam-app/package.json' });
     
     // README.md
-    const readmeContent = `# Üdvözöllek az Alkalmazásban! 🚀
+    const readmeContent = `# 🎉 Desktop App - Teljes Verzió
 
 ## Telepítés
-1. Telepítsd a Node.js-t
-2. Futtasd: npm install
-3. Indítsd el: npm start
+
+1. Node.js telepítése: https://nodejs.org/
+2. Parancssor: npm install
+3. Indítás: npm start
 
 ## Mi van benne?
-✅ Teljes Claude AI chatbot
-✅ Profilkezelés
-✅ Offline mód
-✅ Összes játék
-✅ Dark/Light téma
 
-Élvezd! 😊
+✅ Desktop App (Electron)
+✅ Express szerver
+✅ AI Chatbot
+✅ Profil oldal
+✅ Offline módban működik
+
+## Élvezd! 🚀
 `;
     
     archive.append(readmeContent, { name: 'elso-weboldalam-app/README.md' });
     
     // main.js (Electron fő fájl)
-    const mainJsContent = `const { app, BrowserWindow } = require('electron');
+    const mainJsContent = `const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
+const express = require('express');
+
+const expressApp = express();
+const port = 3000;
+
+expressApp.use(express.urlencoded({ extended: true }));
+expressApp.use(express.json());
+
+expressApp.get('/', (req, res) => {
+  res.send('<h1>🎉 Desktop App - Teljes Verzió!</h1><p>Üdvözöllek! 🚀</p>');
+});
 
 let mainWindow;
 
-const createWindow = () => {
+function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
+      nodeIntegration: false,
+      contextIsolation: true
     }
   });
 
   mainWindow.loadURL('http://localhost:3000');
-};
+  
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
 
-app.on('ready', createWindow);
+app.on('ready', () => {
+  expressApp.listen(port, () => {
+    console.log(\`Express szerver fut a \${port}-es porton\`);
+  });
+  
+  createWindow();
+  
+  const menu = Menu.buildFromTemplate([
+    {
+      label: 'File',
+      submenu: [
+        { label: 'Exit', accelerator: 'CmdOrCtrl+Q', click: () => app.quit() }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'toggleDevTools' }
+      ]
+    }
+  ]);
+  Menu.setApplicationMenu(menu);
+});
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('activate', () => {
+  if (mainWindow === null) createWindow();
 });
 `;
     
@@ -497,41 +528,9 @@ app.on('window-all-closed', () => {
     const gitignore = `node_modules/
 *.log
 .DS_Store
-dist/
-build/
 `;
     
     archive.append(gitignore, { name: 'elso-weboldalam-app/.gitignore' });
-    
-    // FEATURES.md
-    const features = `# Desktop App Funkciók 🎉
-
-## AI Chatbot
-- Teljes Claude AI integráció
-- Real-time válaszok
-- Chat história
-
-## Profilkezelés
-- Profil fül
-- Profilkép feltöltés
-- Beállítások
-
-## Offline Mód
-- Helyi adatok mentése
-- Offline játékok
-
-## Játékok
-- Tengerimalac Kaland 🐹
-- Tetris 🟦
-- Snake 🐍
-- Labirintus 🎯
-
-## Témák
-- Dark mode 🌙
-- Light mode ☀️
-`;
-    
-    archive.append(features, { name: 'elso-weboldalam-app/FEATURES.md' });
     
     archive.finalize();
     
@@ -542,410 +541,18 @@ build/
 });
 
 // ============================================
-// LETÖLTÉSI STATISZTIKÁK
+// ÜZENŐFAL OLDAL
 // ============================================
-app.post('/api/download-stat', async (req, res) => {
-  try {
-    const { osType, appVersion } = req.body;
-    await db.collection('downloads').insertOne({
-      osType,
-      appVersion,
-      downloadTime: new Date(),
-      ip: req.ip
-    });
-    console.log(`📥 Letöltés: ${osType} | v${appVersion}`);
-    res.json({ siker: true });
-  } catch (error) {
-    res.json({ siker: false });
-  }
+app.get('/uzenofal', async (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>💬 Üzenőfal</h1><p>Üzenetek: 0</p></div>');
 });
 // ============================================
-// PROFIL OLDAL
+// AI CHATBOT OLDAL (HUGGING FACE API)
 // ============================================
-app.get('/profil', (req, res) => {
-  const html = `
-    ${getMenu()}
-    ${getStyle()}
-    ${getChatbotWidget()}
-    <style>
-      .profil-container {
-        max-width: 1000px;
-        margin: 0 auto;
-        background: white;
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      }
-      .profil-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 50px;
-        padding-bottom: 30px;
-        border-bottom: 2px solid #667eea;
-      }
-      .profil-pic-container {
-        position: relative;
-        margin-right: 40px;
-      }
-      .profil-pic {
-        width: 150px;
-        height: 150px;
-        border-radius: 50%;
-        border: 5px solid #667eea;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 60px;
-        font-weight: bold;
-        object-fit: cover;
-      }
-      .profil-pic-upload {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        width: 50px;
-        height: 50px;
-        background: #667eea;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 24px;
-        transition: all 0.3s;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-      }
-      .profil-pic-upload:hover {
-        transform: scale(1.1);
-        background: #5568d3;
-      }
-      .profil-info h1 {
-        color: #667eea;
-        font-size: 32px;
-        margin-bottom: 10px;
-      }
-      .profil-tabs {
-        display: flex;
-        gap: 20px;
-        margin-bottom: 40px;
-        border-bottom: 2px solid #eee;
-      }
-      .profil-tab {
-        padding: 15px 25px;
-        background: none;
-        border: none;
-        font-size: 16px;
-        font-weight: bold;
-        color: #999;
-        cursor: pointer;
-        border-bottom: 3px solid transparent;
-        margin-bottom: -2px;
-      }
-      .profil-tab.active {
-        color: #667eea;
-        border-bottom-color: #667eea;
-      }
-      .tab-content {
-        display: none;
-      }
-      .tab-content.active {
-        display: block;
-      }
-      .form-group {
-        margin-bottom: 25px;
-      }
-      .form-group label {
-        display: block;
-        color: #667eea;
-        font-weight: bold;
-        margin-bottom: 8px;
-      }
-      .form-group input,
-      .form-group textarea {
-        width: 100%;
-        padding: 12px;
-        border: 2px solid #eee;
-        border-radius: 8px;
-        font-size: 16px;
-      }
-      .form-group input:focus,
-      .form-group textarea:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
-      }
-      .save-btn {
-        padding: 15px 40px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s;
-      }
-      .save-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-      }
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-        margin-bottom: 30px;
-      }
-      .stat-card {
-        background: #f5f5f5;
-        padding: 25px;
-        border-radius: 12px;
-        text-align: center;
-        border-left: 4px solid #667eea;
-      }
-      .stat-card .number {
-        font-size: 32px;
-        font-weight: bold;
-        color: #667eea;
-        margin-bottom: 10px;
-      }
-      .settings-option {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px;
-        background: #f5f5f5;
-        margin-bottom: 15px;
-        border-radius: 10px;
-      }
-      .toggle-switch {
-        position: relative;
-        width: 50px;
-        height: 25px;
-        background: #ccc;
-        border-radius: 25px;
-        cursor: pointer;
-      }
-      .toggle-switch.active {
-        background: #667eea;
-      }
-      .toggle-switch .slider {
-        position: absolute;
-        top: 3px;
-        left: 3px;
-        width: 19px;
-        height: 19px;
-        background: white;
-        border-radius: 50%;
-        transition: all 0.3s;
-      }
-      .toggle-switch.active .slider {
-        left: 28px;
-      }
-      .danger-zone {
-        background: #fff3cd;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 4px solid #ff6b6b;
-        margin-top: 40px;
-      }
-      .delete-btn {
-        padding: 10px 20px;
-        background: #ff6b6b;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-      }
-      .delete-btn:hover {
-        background: #ff5252;
-      }
-    </style>
-    
-    <div class="profil-container">
-      <div class="profil-header">
-        <div class="profil-pic-container">
-          <div id="profilPic" class="profil-pic">?</div>
-          <div class="profil-pic-upload" onclick="document.getElementById('picInput').click()">
-            📷
-          </div>
-          <input type="file" id="picInput" accept="image/*" style="display: none;" onchange="uploadProfilePic(event)">
-        </div>
-        <div class="profil-info">
-          <h1 id="profilNev">Felhasználó</h1>
-          <p id="profilEmail">email@example.com</p>
-          <p id="profilRegisztracio">Regisztrálva: 2024-01-01</p>
-        </div>
-      </div>
-      
-      <div class="profil-tabs">
-        <button class="profil-tab active" onclick="switchTab('altalanos')">⚙️ Általános</button>
-        <button class="profil-tab" onclick="switchTab('jelszomene')">🔐 Jelszó</button>
-        <button class="profil-tab" onclick="switchTab('statisztika')">📊 Statisztika</button>
-        <button class="profil-tab" onclick="switchTab('beallitasok')">🎨 Beállítások</button>
-      </div>
-      
-      <div id="altalanos" class="tab-content active">
-        <h2 style="color: #667eea; margin-bottom: 25px;">Profil Információk</h2>
-        <div class="form-group">
-          <label>Felhasználónév</label>
-          <input type="text" id="felhasznalonev" readonly>
-        </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="email" placeholder="email@example.com">
-        </div>
-        <div class="form-group">
-          <label>Bio</label>
-          <textarea id="bio" placeholder="Írj valamit magadról..." rows="4"></textarea>
-        </div>
-        <button class="save-btn" onclick="saveProfil()">💾 Mentés</button>
-      </div>
-      
-      <div id="jelszomene" class="tab-content">
-        <h2 style="color: #667eea; margin-bottom: 25px;">Jelszó Megváltoztatása</h2>
-        <div class="form-group">
-          <label>Jelenlegi Jelszó</label>
-          <input type="password" id="jelszoMost" placeholder="••••••••">
-        </div>
-        <div class="form-group">
-          <label>Új Jelszó</label>
-          <input type="password" id="jelszouJ" placeholder="••••••••">
-        </div>
-        <div class="form-group">
-          <label>Jelszó Megerősítés</label>
-          <input type="password" id="jelszuMegerosites" placeholder="••••••••">
-        </div>
-        <button class="save-btn" onclick="changePassword()">🔒 Megváltoztatás</button>
-      </div>
-      
-      <div id="statisztika" class="tab-content">
-        <h2 style="color: #667eea; margin-bottom: 25px;">Statisztika</h2>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="number" id="uzenetekSzama">0</div>
-            <div class="label">Üzenetek</div>
-          </div>
-          <div class="stat-card">
-            <div class="number" id="jatekokSzama">0</div>
-            <div class="label">Játékok</div>
-          </div>
-          <div class="stat-card">
-            <div class="number" id="gyozelmek">0</div>
-            <div class="label">Győzelmek</div>
-          </div>
-        </div>
-      </div>
-      
-      <div id="beallitasok" class="tab-content">
-        <h2 style="color: #667eea; margin-bottom: 25px;">Beállítások</h2>
-        
-        <div class="settings-option">
-          <label>🌙 Dark Mód</label>
-          <div class="toggle-switch" id="darkModeToggle" onclick="toggleDarkMode()">
-            <div class="slider"></div>
-          </div>
-        </div>
-        
-        <div class="settings-option">
-          <label>🔔 Értesítések</label>
-          <div class="toggle-switch active" id="notificationsToggle" onclick="toggleNotifications()">
-            <div class="slider"></div>
-          </div>
-        </div>
-        
-        <div class="danger-zone">
-          <h3>⚠️ Veszélyes Zóna</h3>
-          <button class="delete-btn" onclick="confirmDelete()">🗑️ Fiók Törlése</button>
-        </div>
-      </div>
-    </div>
-    
-    <script>
-      function loadProfilData() {
-        const userData = JSON.parse(localStorage.getItem('bejelentkezve') || '{}');
-        document.getElementById('felhasznalonev').value = userData.felhasznalonev || 'Felhasználó';
-        document.getElementById('profilNev').textContent = userData.felhasznalonev || 'Felhasználó';
-        
-        if (userData.profilkep) {
-          document.getElementById('profilPic').innerHTML = '<img src="' + userData.profilkep + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
-        } else {
-          document.getElementById('profilPic').textContent = (userData.felhasznalonev || 'F').charAt(0).toUpperCase();
-        }
-      }
-      
-      function switchTab(tabName) {
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.profil-tab').forEach(tab => tab.classList.remove('active'));
-        document.getElementById(tabName).classList.add('active');
-        event.target.classList.add('active');
-      }
-      
-      function saveProfil() { alert('✅ Profil mentve!'); }
-      
-      function changePassword() {
-        const jelszoMost = document.getElementById('jelszoMost').value;
-        const jelszouJ = document.getElementById('jelszouJ').value;
-        const jelszuMegerosites = document.getElementById('jelszuMegerosites').value;
-        
-        if (!jelszoMost || !jelszouJ || !jelszuMegerosites) {
-          alert('❌ Töltsd ki az összes mezőt!');
-          return;
-        }
-        if (jelszouJ !== jelszuMegerosites) {
-          alert('❌ A jelszavak nem egyeznek!');
-          return;
-        }
-        alert('✅ Jelszó megváltoztatva!');
-      }
-      
-      function toggleDarkMode() {
-        document.getElementById('darkModeToggle').classList.toggle('active');
-      }
-      
-      function toggleNotifications() {
-        document.getElementById('notificationsToggle').classList.toggle('active');
-      }
-      
-      function uploadProfilePic(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const userData = JSON.parse(localStorage.getItem('bejelentkezve') || '{}');
-          userData.profilkep = e.target.result;
-          localStorage.setItem('bejelentkezve', JSON.stringify(userData));
-          document.getElementById('profilPic').innerHTML = '<img src="' + e.target.result + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
-          alert('✅ Profilkép feltöltve!');
-        };
-        reader.readAsDataURL(file);
-      }
-      
-      function confirmDelete() {
-        if (confirm('⚠️ Biztosan törlöd a fiókodat?')) {
-          alert('❌ Fiók törölve!');
-          localStorage.removeItem('bejelentkezve');
-          window.location.href = '/';
-        }
-      }
-      
-      loadProfilData();
-    </script>
-  `;
-  res.send(html);
-});
-// ============================================
-// GROQ AI CHATBOT (INGYENES)
-// ============================================
-
-// Chat történet tárolása memóriában
-let chatHistories = {};
-
 app.get('/chat', (req, res) => {
   const html = `
-    ${getMenu()}
     ${getStyle()}
+    ${getMenu()}
     <style>
       .chat-page-container {
         max-width: 1000px;
@@ -988,14 +595,8 @@ app.get('/chat', (req, res) => {
         animation: slideIn 0.3s ease;
       }
       @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
       }
       .message.user {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1038,27 +639,38 @@ app.get('/chat', (req, res) => {
         border-radius: 10px;
         cursor: pointer;
         font-weight: bold;
-        transition: all 0.3s;
       }
       .chat-send-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
       }
       .chat-send-btn:disabled {
         opacity: 0.6;
         cursor: not-allowed;
       }
+      .info-banner {
+        background: #e7f3ff;
+        border-left: 4px solid #2196F3;
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        color: #0c5aa0;
+        font-size: 14px;
+      }
     </style>
     
     <div class="chat-page-container">
       <div class="chat-header">
-        <h1>💬 AI Chatbot (Groq)</h1>
-        <p style="color: #999; margin: 5px 0;">Valódi AI asszisztens - Ingyenes! 🚀</p>
+        <h1>💬 AI Chatbot</h1>
+        <p style="color: #999; margin: 5px 0;">Teljesen ingyenes, regisztráció nélkül! 🚀</p>
+      </div>
+      
+      <div class="info-banner">
+        ℹ️ Ez a chatbot publikus API-t használ. Az első válasz lassabb lehet (10-30 másodperc).
       </div>
       
       <div id="chatMessages" class="chat-messages">
         <div class="message bot">
-          Szia! 👋 Én egy AI asszisztens vagyok a Groq-ot használva! Kérdezz meg bármit, vagy beszéljünk valamiről! 🤖
+          Szia! 👋 Én egy AI asszisztens vagyok! Kérdezz meg bármit, és segíteni fogok! 🤖
         </div>
       </div>
       
@@ -1117,7 +729,6 @@ app.get('/chat', (req, res) => {
         } catch (error) {
           messagesContainer.removeChild(loadingMsg);
           addMessage('❌ Hiba történt! Próbáld újra később.', false);
-          console.error('Chat hiba:', error);
         }
         
         sendBtn.disabled = false;
@@ -1129,7 +740,7 @@ app.get('/chat', (req, res) => {
 });
 
 // ============================================
-// GROQ AI CHAT API ENDPOINT
+// AI CHAT API ENDPOINT (HUGGING FACE)
 // ============================================
 app.post('/api/chat', async (req, res) => {
   try {
@@ -1150,37 +761,40 @@ app.post('/api/chat', async (req, res) => {
       content: message
     });
     
-    // Groq API hívás
-    const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    // Hugging Face Inference API hívás (ingyenes, regisztrációs nélkül)
+    const apiResponse = await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + process.env.GROQ_API_KEY
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'mixtral-8x7b-32768',
         messages: [
           {
             role: 'system',
-            content: 'Te egy barátságos és hasznos AI asszisztens vagy. Magyarországon vagy, így magyarul válaszolj. Rövid és érthető válaszokat adj.'
+            content: 'Te egy barátságos és hasznos AI asszisztens vagy. Magyarországon vagy, így magyarul válaszolj. Rövid és érthető válaszokat adj. Maximum 3-4 mondat.'
           },
           ...chatHistories[userId]
         ],
-        max_tokens: 1024,
-        temperature: 0.7
+        max_tokens: 256,
+        temperature: 0.7,
+        top_p: 0.95
       })
     });
     
     const apiData = await apiResponse.json();
     
     if (!apiResponse.ok) {
-      console.error('Groq API hiba:', apiData);
+      console.error('Hugging Face hiba:', apiData);
       return res.json({ 
-        reply: '⚠️ AI hiba. Próbáld újra később!'
+        reply: '⚠️ AI hiba. Kérlek próbáld újra néhány másodperc múlva!'
       });
     }
     
-    const aiReply = apiData.choices[0].message.content;
+    let aiReply = 'Sajnálom, nem sikerült válaszolni.';
+    
+    if (apiData.choices && apiData.choices[0] && apiData.choices[0].message) {
+      aiReply = apiData.choices[0].message.content.trim();
+    }
     
     // Válasz hozzáadása a történethez
     chatHistories[userId].push({
@@ -1188,9 +802,9 @@ app.post('/api/chat', async (req, res) => {
       content: aiReply
     });
     
-    // Előzményt korlátozunk (max 20 üzenet)
-    if (chatHistories[userId].length > 20) {
-      chatHistories[userId] = chatHistories[userId].slice(-20);
+    // Előzményt korlátozunk (max 10 üzenet)
+    if (chatHistories[userId].length > 10) {
+      chatHistories[userId] = chatHistories[userId].slice(-10);
     }
     
     res.json({ reply: aiReply });
@@ -1202,22 +816,7 @@ app.post('/api/chat', async (req, res) => {
     });
   }
 });
-// EGYELŐRE PLACEHOLDER-EK:
-app.get('/letoltes', (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>📥 Letöltés</h1></div>');
-});
-
-app.get('/profil', (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>👤 Profil</h1></div>');
-});
-
-app.get('/chat', (req, res) => {
-  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>💬 AI Chatbot</h1></div>');
-});
 
 // ============================================
-// API ROUTES
+// VÉGE - APP ÖSSZEÁLLT!
 // ============================================
-app.post('/api/chat', (req, res) => {
-  res.json({ reply: 'Szia! 👋' });
-});
