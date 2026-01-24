@@ -1,3 +1,242 @@
+// ============================================
+// ÖSSZES REQUIRE AZ ELEJÉN
+// ============================================
+const express = require('express');
+const { MongoClient } = require('mongodb');
+const schedule = require('node-schedule');
+const fs = require('fs');
+const path = require('path');
+const archiver = require('archiver');
+
+const app = express();
+
+// ============================================
+// KONFIGURÁCIÓ
+// ============================================
+const port = process.env.PORT || 3000;
+const mongoUrl = process.env.MONGODB_URL || 'mongodb://localhost:27017';
+const dbName = 'elso-weboldalam';
+let db;
+let uzenetekCollection;
+let jatekAllapotCollection;
+
+// ============================================
+// MIDDLEWARE
+// ============================================
+app.use(express.urlencoded({ extended: true, limit: '10tb' }));
+app.use(express.json({ limit: '10tb' }));
+
+// ============================================
+// SERVER INDÍTÁS
+// ============================================
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Az oldal fut a porton: ${port}`);
+});
+
+// ============================================
+// MONGODB CSATLAKOZÁS
+// ============================================
+MongoClient.connect(mongoUrl)
+  .then(client => {
+    console.log('Sikeresen csatlakoztunk a MongoDB-hez!');
+    db = client.db(dbName);
+    uzenetekCollection = db.collection('uzenetek');
+    jatekAllapotCollection = db.collection('jatek_allapot');
+    scheduleMessageWallReset();
+  })
+  .catch(error => {
+    console.error('MongoDB kapcsolódási hiba:', error);
+    console.log('Az oldal MongoDB nélkül fut.');
+  });
+
+// ============================================
+// ÜZENŐFAL RESETELÉS FÜGGVÉNY
+// ============================================
+function scheduleMessageWallReset() {
+  schedule.scheduleJob('0 0 * * *', async () => {
+    try {
+      const deletedCount = await uzenetekCollection.deleteMany({});
+      console.log(`✅ Üzenőfal resetelve! ${deletedCount.deletedCount} üzenet törölve. Idő: ${new Date().toLocaleString('hu-HU')}`);
+    } catch (error) {
+      console.error('❌ Hiba az üzenőfal resetelése közben:', error);
+    }
+  });
+  console.log('📅 Üzenőfal reset ütemezve minden nap 00:00-kor');
+}
+
+// ============================================
+// STYLE ÉS MENU FÜGGVÉNYEK
+// ============================================
+function getStyle() {
+  return `
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+      nav {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 15px;
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+        text-align: center;
+      }
+      nav a {
+        color: #667eea;
+        margin: 10px 15px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 18px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        transition: all 0.3s;
+        display: inline-block;
+      }
+      nav a:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      h1 {
+        color: #667eea;
+        font-size: 48px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      p {
+        color: #555;
+        font-size: 18px;
+        line-height: 1.8;
+        margin: 15px 0;
+      }
+    </style>
+  `;
+}
+
+function getMenu() {
+  return `
+    <nav>
+      <a href="/">🏠 Főoldal</a>
+      <a href="/rolam">👤 Rólam</a>
+      <a href="/a_weboldalrol">ℹ️ A weboldalról</a>
+      <a href="/jatekok">🎮 Játékok</a>
+      <a href="/uzenofal">💬 Üzenőfal</a>
+      <a href="/letoltes">📥 Letöltés</a>
+      <a href="/chat">💬 AI Chatbot</a>
+      <span id="auth-menu">
+        <a href="/bejelentkezes">🔐 Bejelentkezés</a>
+      </span>
+    </nav>
+    <script>
+      (function() {
+        const bejelentkezve = JSON.parse(localStorage.getItem('bejelentkezve') || 'null');
+        if (bejelentkezve) {
+          const profilkepHTML = bejelentkezve.profilkep 
+            ? '<img src="' + bejelentkezve.profilkep + '" style="width: 30px; height: 30px; border-radius: 50%; vertical-align: middle; margin-right: 5px; object-fit: cover;">'
+            : '<span style="display: inline-block; width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; line-height: 30px; font-weight: bold; margin-right: 5px; vertical-align: middle;">' + bejelentkezve.felhasznalonev.charAt(0).toUpperCase() + '</span>';
+          
+          document.getElementById('auth-menu').innerHTML = 
+            profilkepHTML + 
+            '<span style="color: #667eea; font-weight: bold; margin-right: 10px;">' + bejelentkezve.felhasznalonev + '</span>' +
+            '<a href="/profil">👤 Profil</a>' +
+            '<a href="/kijelentkezes">🚪 Kilépés</a>';
+        }
+      })();
+    </script>
+  `;
+}
+
+function getChatbotWidget() {
+  return `
+    <style>
+      #chatbot-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        z-index: 1000;
+        font-size: 30px;
+      }
+      #chatbot-container {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 380px;
+        height: 500px;
+        background: #f0f0f0;
+        border-radius: 20px;
+        display: none;
+        flex-direction: column;
+        z-index: 1000;
+      }
+      #chatbot-container.active {
+        display: flex;
+      }
+    </style>
+    <button id="chatbot-toggle">🤖</button>
+    <div id="chatbot-container">
+      <div style="padding: 15px; background: #667eea; color: white; border-radius: 18px 18px 0 0;">
+        <h3 style="margin: 0;">💬 Demo Chatbot</h3>
+      </div>
+      <div id="chatbot-messages" style="flex: 1; overflow-y: auto; padding: 15px;"></div>
+      <div style="padding: 15px; display: flex; gap: 10px;">
+        <input type="text" id="chatbot-input" placeholder="Üzenet..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+        <button id="chatbot-send" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px;">Küld</button>
+      </div>
+    </div>
+    <script>
+      const toggle = document.getElementById('chatbot-toggle');
+      const container = document.getElementById('chatbot-container');
+      toggle.addEventListener('click', () => { container.classList.toggle('active'); });
+    </script>
+  `;
+}
+
+// ============================================
+// GET ROUTES
+// ============================================
+app.get('/', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🌟 Üdvözöllek!</h1></div>');
+});
+
+app.get('/rolam', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>👦 Rólam</h1><p>8 éves programozó vagyok!</p></div>');
+});
+
+app.get('/a_weboldalrol', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>ℹ️ A weboldalról</h1></div>');
+});
+
+app.get('/jatekok', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🎮 Játékok</h1></div>');
+});
+
+app.get('/bejelentkezes', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>🔐 Bejelentkezés</h1></div>');
+});
+
+// ============================================
+// LETÖLTÉS, PROFIL, CHAT ROUTE-OK
+// ============================================
+// (IDE MÁSOLOD A 4 RÉSZ KÓDJÁT)
 app.get('/letoltes', (req, res) => {
   const html = `
     ${getMenu()}
@@ -697,7 +936,7 @@ app.get('/profil', (req, res) => {
   res.send(html);
 });
 // ============================================
-// HUGGING FACE AI CHATBOT (INGYENES, REGISZTRÁCIÓS NÉLKÜL)
+// GROQ AI CHATBOT (INGYENES)
 // ============================================
 
 // Chat történet tárolása memóriában
@@ -809,30 +1048,17 @@ app.get('/chat', (req, res) => {
         opacity: 0.6;
         cursor: not-allowed;
       }
-      .info-banner {
-        background: #e7f3ff;
-        border-left: 4px solid #2196F3;
-        padding: 10px 15px;
-        margin-bottom: 15px;
-        border-radius: 5px;
-        color: #0c5aa0;
-        font-size: 14px;
-      }
     </style>
     
     <div class="chat-page-container">
       <div class="chat-header">
-        <h1>💬 AI Chatbot</h1>
-        <p style="color: #999; margin: 5px 0;">Teljesen ingyenes, regisztráció nélkül! 🚀</p>
-      </div>
-      
-      <div class="info-banner">
-        ℹ️ Ez a chatbot publikus API-t használ. Az első válasz lassabb lehet (10-30 másodperc).
+        <h1>💬 AI Chatbot (Groq)</h1>
+        <p style="color: #999; margin: 5px 0;">Valódi AI asszisztens - Ingyenes! 🚀</p>
       </div>
       
       <div id="chatMessages" class="chat-messages">
         <div class="message bot">
-          Szia! 👋 Én egy AI asszisztens vagyok! Kérdezz meg bármit, és segíteni fogok! 🤖
+          Szia! 👋 Én egy AI asszisztens vagyok a Groq-ot használva! Kérdezz meg bármit, vagy beszéljünk valamiről! 🤖
         </div>
       </div>
       
@@ -903,7 +1129,7 @@ app.get('/chat', (req, res) => {
 });
 
 // ============================================
-// AI CHAT API ENDPOINT (Hugging Face)
+// GROQ AI CHAT API ENDPOINT
 // ============================================
 app.post('/api/chat', async (req, res) => {
   try {
@@ -924,40 +1150,37 @@ app.post('/api/chat', async (req, res) => {
       content: message
     });
     
-    // Hugging Face Inference API hívás (ingyenes, regisztrációs nélkül)
-    const apiResponse = await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1/v1/chat/completions', {
+    // Groq API hívás
+    const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + process.env.GROQ_API_KEY
       },
       body: JSON.stringify({
+        model: 'mixtral-8x7b-32768',
         messages: [
           {
             role: 'system',
-            content: 'Te egy barátságos és hasznos AI asszisztens vagy. Magyarországon vagy, így magyarul válaszolj. Rövid és érthető válaszokat adj. Maximum 3-4 mondat.'
+            content: 'Te egy barátságos és hasznos AI asszisztens vagy. Magyarországon vagy, így magyarul válaszolj. Rövid és érthető válaszokat adj.'
           },
           ...chatHistories[userId]
         ],
-        max_tokens: 256,
-        temperature: 0.7,
-        top_p: 0.95
+        max_tokens: 1024,
+        temperature: 0.7
       })
     });
     
     const apiData = await apiResponse.json();
     
     if (!apiResponse.ok) {
-      console.error('Hugging Face hiba:', apiData);
+      console.error('Groq API hiba:', apiData);
       return res.json({ 
-        reply: '⚠️ AI hiba. Kérlek próbáld újra néhány másodperc múlva!'
+        reply: '⚠️ AI hiba. Próbáld újra később!'
       });
     }
     
-    let aiReply = 'Sajnálom, nem sikerült válaszolni.';
-    
-    if (apiData.choices && apiData.choices[0] && apiData.choices[0].message) {
-      aiReply = apiData.choices[0].message.content.trim();
-    }
+    const aiReply = apiData.choices[0].message.content;
     
     // Válasz hozzáadása a történethez
     chatHistories[userId].push({
@@ -965,9 +1188,9 @@ app.post('/api/chat', async (req, res) => {
       content: aiReply
     });
     
-    // Előzményt korlátozunk (max 10 üzenet)
-    if (chatHistories[userId].length > 10) {
-      chatHistories[userId] = chatHistories[userId].slice(-10);
+    // Előzményt korlátozunk (max 20 üzenet)
+    if (chatHistories[userId].length > 20) {
+      chatHistories[userId] = chatHistories[userId].slice(-20);
     }
     
     res.json({ reply: aiReply });
@@ -978,4 +1201,23 @@ app.post('/api/chat', async (req, res) => {
       reply: '❌ Szerver hiba. Próbáld újra!'
     });
   }
+});
+// EGYELŐRE PLACEHOLDER-EK:
+app.get('/letoltes', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>📥 Letöltés</h1></div>');
+});
+
+app.get('/profil', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>👤 Profil</h1></div>');
+});
+
+app.get('/chat', (req, res) => {
+  res.send(getStyle() + getMenu() + getChatbotWidget() + '<div class="container"><h1>💬 AI Chatbot</h1></div>');
+});
+
+// ============================================
+// API ROUTES
+// ============================================
+app.post('/api/chat', (req, res) => {
+  res.json({ reply: 'Szia! 👋' });
 });
