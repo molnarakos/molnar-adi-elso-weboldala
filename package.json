@@ -1,18 +1,15 @@
 {
   "name": "elso-weboldalam",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "8 éves programozó weboldala",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node app.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-"dependencies": {
-  "express": "^4.18.2",
-  "mongodb": "^6.3.0",
-  "node-schedule": "^2.1.1"
-}
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongodb": "^5.0.0",
+    "node-schedule": "^2.1.1",
+    "archiver": "^6.0.0"
+  }
 }
