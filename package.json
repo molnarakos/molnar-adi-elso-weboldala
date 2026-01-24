@@ -1,11 +1,21 @@
 {
   "name": "elso-weboldalam",
-  "version": "1.0.0",
-  "description": "8 éves programozó weboldala",
+  "version": "1.0.1",
+  "description": "8 éves programozó weboldala - interaktív profilképekkel",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "dev": "node app.js"
   },
+  "keywords": [
+    "weboldal",
+    "programozás",
+    "játékok",
+    "Node.js",
+    "MongoDB"
+  ],
+  "author": "8 éves programozó",
+  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "mongodb": "^5.0.0",
