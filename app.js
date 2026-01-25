@@ -1027,3 +1027,72 @@ app.post('/api/login', async (req, res) => {
 app.get('/kijelentkezes', (req, res) => {
   res.send(`${getMenu()}${getStyle()}${getChatbotWidget()}<div class="container"><h1 style="color: #667eea;">👋 Kijelentkezés...</h1></div><script>localStorage.removeItem('bejelentkezve'); setTimeout(() => { window.location.href = '/'; }, 1000);</script>`);
 });
+// HOZZÁADÁS AZ app.js VÉGÉHEZ
+
+app.post('/api/save-game', async (req, res) => {
+  try {
+    const { felhasznalonev, level, finishCount, totalWins, unlockedFinishes } = req.body;
+    
+    if (!felhasznalonev) {
+      return res.json({ siker: false, uzenet: 'Felhasználónév szükséges!' });
+    }
+    
+    await db.collection('users').updateOne(
+      { felhasznalonev },
+      { 
+        $set: { 
+          gameData: {
+            level: level || 1,
+            finishCount: finishCount || 0,
+            totalWins: totalWins || 0,
+            unlockedFinishes: unlockedFinishes || [],
+            lastPlayed: new Date()
+          }
+        } 
+      },
+      { upsert: true }
+    );
+    
+    console.log('✅ Játékadat mentve:', felhasznalonev);
+    res.json({ siker: true });
+  } catch (error) {
+    console.error('Játékadatok mentési hiba:', error);
+    res.json({ siker: false, uzenet: 'Szerver hiba!' });
+  }
+});
+
+app.get('/api/load-game/:felhasznalonev', async (req, res) => {
+  try {
+    const user = await db.collection('users').findOne({ 
+      felhasznalonev: req.params.felhasznalonev 
+    });
+    
+    if (user && user.gameData) {
+      res.json({ 
+        siker: true, 
+        gameData: user.gameData 
+      });
+    } else {
+      res.json({ 
+        siker: true,
+        gameData: {
+          level: 1,
+          finishCount: 0,
+          totalWins: 0,
+          unlockedFinishes: []
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Játékadatok betöltési hiba:', error);
+    res.json({ 
+      siker: false, 
+      gameData: {
+        level: 1,
+        finishCount: 0,
+        totalWins: 0,
+        unlockedFinishes: []
+      }
+    });
+  }
+});
