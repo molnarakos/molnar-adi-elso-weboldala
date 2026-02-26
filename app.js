@@ -38,7 +38,7 @@ function getStyle() {
     @keyframes alapHatter { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
     @keyframes gradiensAnim { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
     @keyframes hullamAnim { 0%{background-position:0% 0%} 100%{background-position:100% 100%} }
-    @keyframes buborekFel { 0%{transform:translateY(100vh) scale(0);opacity:0} 10%{opacity:1} 90%{opacity:0.5} 100%{transform:translateY(-100px) scale(1);opacity:0} }
+    @keyframes buborekFel { 0%{transform:translateY(110vh) scale(0.3);opacity:0} 10%{opacity:0.8} 85%{opacity:0.6} 100%{transform:translateY(-10vh) scale(1.1);opacity:0} }
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -52,11 +52,7 @@ function getStyle() {
       background-size: 600% 600% !important;
       animation: gradiensAnim 10s ease infinite !important;
     }
-    body.hatter-hullam {
-      background: linear-gradient(135deg, #0052d4, #4364f7, #6fb1fc, #0052d4) !important;
-      background-size: 400% 400% !important;
-      animation: hullamAnim 8s ease infinite alternate !important;
-    }
+    body.hatter-hullam { background: #001a4d !important; animation: none !important; }
     body.hatter-csillag { background: #0a0a2e !important; animation: none !important; }
     body.hatter-buborek { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460) !important; animation: none !important; }
     body.hatter-kep { background-size: cover !important; background-position: center !important; background-attachment: fixed !important; animation: none !important; }
@@ -91,6 +87,7 @@ function getMenu() {
 
   <canvas id="csillag-canvas"></canvas>
   <div id="buborek-container"></div>
+  <canvas id="hullam-canvas" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;"></canvas>
   <video id="hatter-video-el" autoplay muted loop playsinline></video>
 
   <script>
@@ -141,6 +138,53 @@ function getMenu() {
       }
     }
 
+    function indítHullam() {
+      const canvas = document.getElementById('hullam-canvas');
+      canvas.style.display = 'block';
+      const ctx = canvas.getContext('2d');
+      function resz() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+      resz(); window.addEventListener('resize', resz);
+      let t = 0;
+      function rajz() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        // Sky gradient
+        const sky = ctx.createLinearGradient(0,0,0,canvas.height);
+        sky.addColorStop(0,'#001a4d'); sky.addColorStop(0.6,'#003080'); sky.addColorStop(1,'#0052d4');
+        ctx.fillStyle = sky; ctx.fillRect(0,0,canvas.width,canvas.height);
+        // Moon
+        ctx.beginPath(); ctx.arc(canvas.width*0.8, 80, 40, 0, Math.PI*2);
+        ctx.fillStyle='rgba(255,255,220,0.9)'; ctx.fill();
+        // Multiple wave layers
+        const waves = [
+          {amp:30, freq:0.008, speed:0.03, y:0.55, color:'rgba(0,80,180,0.7)'},
+          {amp:22, freq:0.012, speed:0.05, y:0.62, color:'rgba(0,100,200,0.65)'},
+          {amp:18, freq:0.016, speed:0.07, y:0.68, color:'rgba(20,130,220,0.6)'},
+          {amp:14, freq:0.020, speed:0.09, y:0.74, color:'rgba(40,160,240,0.55)'},
+        ];
+        waves.forEach(w => {
+          ctx.beginPath();
+          ctx.moveTo(0, canvas.height);
+          for (let x=0; x<=canvas.width; x+=3) {
+            const y = canvas.height*w.y + Math.sin(x*w.freq + t*w.speed*50) * w.amp + Math.sin(x*w.freq*1.7 + t*w.speed*30) * (w.amp*0.4);
+            ctx.lineTo(x, y);
+          }
+          ctx.lineTo(canvas.width, canvas.height);
+          ctx.closePath();
+          ctx.fillStyle = w.color; ctx.fill();
+        });
+        // Foam sparkles on top wave
+        for(let i=0;i<8;i++){
+          const x = (Math.sin(t*0.8+i*1.3)*0.5+0.5)*canvas.width;
+          const y = canvas.height*0.55 + Math.sin(x*0.008+t*1.5)*30;
+          ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2);
+          ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.fill();
+        }
+        t++;
+        requestAnimationFrame(rajz);
+      }
+      rajz();
+    }
+
     function alkalmazHatter(u) {
       if (!u || !u.hatterTipus) return;
       const t = u.hatterTipus;
@@ -148,7 +192,7 @@ function getMenu() {
       if (t === 'gradiens') document.body.classList.add('hatter-gradiens');
       else if (t === 'csillag') { document.body.classList.add('hatter-csillag'); indítCsillagok(); }
       else if (t === 'buborek') { document.body.classList.add('hatter-buborek'); indítBuborékok(); }
-      else if (t === 'hullam') document.body.classList.add('hatter-hullam');
+      else if (t === 'hullam') { document.body.classList.add('hatter-hullam'); indítHullam(); }
       else if (t === 'kep' && u.hatterAdat) { document.body.classList.add('hatter-kep'); document.body.style.backgroundImage = 'url('+u.hatterAdat+')'; }
       else if (t === 'video' && u.hatterAdat) {
         document.body.classList.add('hatter-video');
