@@ -2,20 +2,16 @@ const express = require('express');
 const { MongoClient } = require('mongodb');
 const app = express();
 const port = 3000;
-
 const mongoUrl = process.env.MONGODB_URL || 'mongodb://localhost:27017';
 const dbName = 'elso-weboldalam';
 let db;
 let uzenetekCollection;
 let jatekAllapotCollection;
-
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.json({ limit: '50mb' }));
-
 app.listen(port, '0.0.0.0', () => {
   console.log(`Az oldal fut a porton: ${port}`);
 });
-
 MongoClient.connect(mongoUrl)
   .then(client => {
     console.log('Sikeresen csatlakoztunk a MongoDB-hez!');
@@ -27,11 +23,9 @@ MongoClient.connect(mongoUrl)
     console.error('MongoDB kapcsolodasi hiba:', error);
     console.log('Az oldal MongoDB nelkul fut.');
   });
-
 // ============================================================
 // STILUS ES MENU
 // ============================================================
-
 function getStyle() {
   return `<style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -39,7 +33,6 @@ function getStyle() {
     @keyframes gradiensAnim { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
     @keyframes hullamAnim { 0%{background-position:0% 0%} 100%{background-position:100% 100%} }
     @keyframes buborekFel { 0%{transform:translateY(110vh) scale(0.3);opacity:0} 10%{opacity:0.8} 85%{opacity:0.6} 100%{transform:translateY(-10vh) scale(1.1);opacity:0} }
-
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(-45deg, #667eea, #764ba2, #f64f59, #43c6ac, #667eea);
@@ -57,12 +50,10 @@ function getStyle() {
     body.hatter-buborek { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460) !important; animation: none !important; }
     body.hatter-kep { background-size: cover !important; background-position: center !important; background-attachment: fixed !important; animation: none !important; }
     body.hatter-video { background: #000 !important; animation: none !important; }
-
     #hatter-video-el { display:none; position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:0; opacity:0.75; }
     #csillag-canvas { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; }
     #buborek-container { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; overflow:hidden; }
     .buborek { position:absolute; border-radius:50%; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.3); animation: buborekFel linear infinite; }
-
     nav { background: rgba(255,255,255,0.95); padding: 15px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin-bottom: 30px; text-align: center; position: relative; z-index: 10; }
     nav a { color: #667eea; margin: 10px 15px; text-decoration: none; font-weight: bold; font-size: 18px; padding: 10px 20px; border-radius: 10px; transition: all 0.3s; display: inline-block; }
     nav a:hover { background: #667eea; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
@@ -74,7 +65,6 @@ function getStyle() {
     .emoji { font-size: 40px; display: block; margin-bottom: 10px; }
   </style>`;
 }
-
 function getMenu() {
   return `<nav>
     <a href="/">&#127968; Fooldal</a>
@@ -84,16 +74,13 @@ function getMenu() {
     <a href="/uzenofal">&#128172; Uzenofal</a>
     <span id="auth-menu"><a href="/bejelentkezes">&#128272; Bejelentkezes</a></span>
   </nav>
-
   <canvas id="csillag-canvas"></canvas>
   <div id="buborek-container"></div>
   <canvas id="hullam-canvas" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;"></canvas>
   <video id="hatter-video-el" autoplay muted loop playsinline></video>
-
   <script>
   (function() {
     const user = JSON.parse(localStorage.getItem('bejelentkezve') || 'null');
-
     if (user) {
       const pk = user.profilkep
         ? '<img src="' + user.profilkep + '" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:5px;object-fit:cover;">'
@@ -103,7 +90,6 @@ function getMenu() {
         '<span style="color:#667eea;font-weight:bold;margin-right:10px;">' + user.felhasznalonev + '</span></a>' +
         '<a href="/kijelentkezes">&#128682; Kilepes</a>';
     }
-
     function indítCsillagok() {
       const canvas = document.getElementById('csillag-canvas');
       canvas.style.display = 'block';
@@ -125,7 +111,6 @@ function getMenu() {
       }
       rajz();
     }
-
     function indítBuborékok() {
       const cont = document.getElementById('buborek-container');
       cont.style.display = 'block';
@@ -137,7 +122,6 @@ function getMenu() {
         cont.appendChild(b);
       }
     }
-
     function indítHullam() {
       const canvas = document.getElementById('hullam-canvas');
       canvas.style.display = 'block';
@@ -184,7 +168,6 @@ function getMenu() {
       }
       rajz();
     }
-
     function alkalmazHatter(u) {
       if (!u || !u.hatterTipus) return;
       const t = u.hatterTipus;
@@ -199,28 +182,22 @@ function getMenu() {
         const v = document.getElementById('hatter-video-el'); v.style.display='block'; v.src = u.hatterAdat;
       }
     }
-
     if (user) alkalmazHatter(user);
   })();
   </script>`;
 }
-
 // ============================================================
 // OLDALAK
 // ============================================================
-
 app.get('/', (req, res) => {
   res.send(getStyle() + getMenu() + '<div class="container"><h1>&#127775; Udvozollek a weboldalamon!</h1><p style="text-align:center;font-size:20px;">Hasznald a menut fent, hogy felfedezd az oldalaimat!</p></div>');
 });
-
 app.get('/rolam', (req, res) => {
   res.send(getStyle() + getMenu() + '<div class="container"><h1>&#128102; Rolam</h1><p>&#127874; <strong>En egy 8 eves gyerek vagyok</strong>, es a kedvenc hobbim a <strong>programozas</strong>!</p><p>&#128187; Imadok szamitogepezni es uj dolgokat tanulni.</p></div>');
 });
-
 app.get('/a_weboldalrol', (req, res) => {
   res.send(getStyle() + getMenu() + '<div class="container"><h1>&#8505;&#65039; A weboldalrol</h1><p>&#128295; Ezt a weboldalt <strong>apukammal</strong> (meg az AI-al) csinaltak.</p></div>');
 });
-
 app.get('/jatekok', (req, res) => {
   res.send(getStyle() + getMenu() + '<div class="container"><h1>&#127918; Jatekok</h1><p style="text-align:center;">Valassz egy jatekot!</p><div style="text-align:center;margin-top:30px;">' +
     '<a href="/tengerimalac-jatek" class="game-button"><span class="emoji">&#128057;</span>Tengerimalac Kaland</a>' +
@@ -228,11 +205,9 @@ app.get('/jatekok', (req, res) => {
     '<a href="/snake" class="game-button"><span class="emoji">&#128013;</span>Snake</a>' +
     '<a href="/labirintus" class="game-button"><span class="emoji">&#127919;</span>Labirintus</a></div></div>');
 });
-
 // ============================================================
 // PROFIL OLDAL
 // ============================================================
-
 app.get('/profil', (req, res) => {
   res.send(getStyle() + getMenu() + `
   <style>
@@ -257,11 +232,9 @@ app.get('/profil', (req, res) => {
     @keyframes gradiensAnim2 { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
     @keyframes hullamAnim2 { 0%{background-position:0% 0%} 100%{background-position:100% 100%} }
   </style>
-
   <div class="profil-container" id="profilOldal" style="display:none;">
     <div id="avatarContainer"></div>
     <div class="profil-nev" id="profilNev"></div>
-
     <div class="szekció">
       <h2>&#128444;&#65039; Profilkep modositasa</h2>
       <div class="feltoltes-zone" onclick="document.getElementById('ujProfilkep').click()">
@@ -274,7 +247,6 @@ app.get('/profil', (req, res) => {
       </div>
       <div id="pkEredmeny" class="eredmeny"></div>
     </div>
-
     <div class="szekció">
       <h2>&#127912; Hatter beallitasa</h2>
       <p style="color:#666;margin-bottom:15px;font-size:15px;">Valassz elore keszitett animaciot:</p>
@@ -300,7 +272,6 @@ app.get('/profil', (req, res) => {
           &#127754; Hullamo tenger
         </div>
       </div>
-
       <p style="color:#666;margin-bottom:10px;font-size:15px;margin-top:15px;">Vagy toltsd fel a sajatod:</p>
       <div class="hatter-grid">
         <div class="feltoltes-zone" onclick="document.getElementById('hatterKepFile').click()">
@@ -312,18 +283,15 @@ app.get('/profil', (req, res) => {
       </div>
       <input type="file" id="hatterKepFile" accept="image/*" style="display:none;" onchange="feltoltHatterkep(event)">
       <input type="file" id="hatterVideoFile" accept="video/mp4,video/webm" style="display:none;" onchange="feltoltHattervideo(event)">
-
       <div id="hatterElonezet" style="display:none;margin-top:15px;text-align:center;">
         <p style="color:#667eea;font-weight:bold;">Feltoltott fajl elonezet:</p>
         <img id="hatterKepPreview" style="max-width:100%;max-height:150px;border-radius:10px;display:none;">
         <video id="hatterVideoPreview" style="max-width:100%;max-height:150px;border-radius:10px;display:none;" autoplay muted loop></video>
       </div>
-
       <button class="mentes-btn" onclick="mentHatter(this)">&#127912; Hatter mentese</button>
       <div id="hatterEredmeny" class="eredmeny"></div>
     </div>
   </div>
-
   <div class="container" id="nemBejelentkezve" style="display:none;">
     <h1>&#128272; Be kell jelentkezni!</h1>
     <p style="text-align:center;">A profil megtekinteshez jelentkezz be!</p>
@@ -331,12 +299,10 @@ app.get('/profil', (req, res) => {
       <a href="/bejelentkezes" class="game-button">&#128272; Bejelentkezes</a>
     </div>
   </div>
-
   <script>
   const user = JSON.parse(localStorage.getItem('bejelentkezve') || 'null');
   let kivalasztottHatter = null;
   let kivalasztottHatterAdat = null;
-
   if (!user) {
     document.getElementById('nemBejelentkezve').style.display = 'block';
   } else {
@@ -354,7 +320,6 @@ app.get('/profil', (req, res) => {
       kivalasztottHatter = user.hatterTipus;
     }
   }
-
   function valasztHatter(tipus) {
     document.querySelectorAll('.hatter-option').forEach(el => el.classList.remove('aktiv'));
     document.getElementById('opt-' + tipus).classList.add('aktiv');
@@ -362,7 +327,6 @@ app.get('/profil', (req, res) => {
     kivalasztottHatterAdat = null;
     document.getElementById('hatterElonezet').style.display = 'none';
   }
-
   function feltoltHatterkep(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -379,7 +343,6 @@ app.get('/profil', (req, res) => {
     };
     reader.readAsDataURL(file);
   }
-
   function feltoltHattervideo(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -396,7 +359,6 @@ app.get('/profil', (req, res) => {
     };
     reader.readAsDataURL(file);
   }
-
   async function mentHatter(btn) {
     if (!kivalasztottHatter) { alert('Valassz egy hattert!'); return; }
     btn.textContent = 'Mentes...';
@@ -425,7 +387,6 @@ app.get('/profil', (req, res) => {
     btn.textContent = 'Hatter mentese';
     btn.disabled = false;
   }
-
   function profilkepElonezet(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -437,7 +398,6 @@ app.get('/profil', (req, res) => {
     };
     reader.readAsDataURL(file);
   }
-
   async function mentProfilkep() {
     const ujKep = document.getElementById('pkPreview').src;
     try {
@@ -465,11 +425,9 @@ app.get('/profil', (req, res) => {
   </script>
   `);
 });
-
 // ============================================================
 // API – PROFIL MENTES
 // ============================================================
-
 app.post('/api/profil-mentes', async (req, res) => {
   try {
     if (!db) return res.json({ siker: false, uzenet: 'MongoDB nincs csatlakozva!' });
@@ -483,7 +441,6 @@ app.post('/api/profil-mentes', async (req, res) => {
     res.json({ siker: false, uzenet: 'Szerver hiba!' });
   }
 });
-
 app.post('/api/profilkep-mentes', async (req, res) => {
   try {
     if (!db) return res.json({ siker: false, uzenet: 'MongoDB nincs csatlakozva!' });
@@ -497,19 +454,15 @@ app.post('/api/profilkep-mentes', async (req, res) => {
     res.json({ siker: false, uzenet: 'Szerver hiba!' });
   }
 });
-
 // ============================================================
 // BEJELENTKEZES / REGISZTRACIO
 // ============================================================
-
 app.get('/bejelentkezes', (req, res) => {
   res.send(getMenu() + getStyle() + `<style>.login-container{max-width:400px;margin:50px auto;background:white;padding:40px;border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,0.2);position:relative;z-index:10;}.login-form input{width:100%;padding:12px;margin:10px 0;border:2px solid #667eea;border-radius:8px;font-size:16px}.login-btn{width:100%;padding:15px;background:#667eea;color:white;border:none;border-radius:8px;font-size:18px;font-weight:bold;cursor:pointer;margin-top:10px}.login-btn:hover{background:#5568d3}.switch-link{text-align:center;margin-top:20px;color:#667eea}.switch-link a{color:#667eea;font-weight:bold;text-decoration:underline}</style><div class="login-container"><h1 style="color:#667eea;text-align:center;">&#128272; Bejelentkezes</h1><form class="login-form" action="/api/login" method="POST"><input type="text" name="felhasznalonev" placeholder="Felhasznalonev" required><input type="password" name="jelszo" placeholder="Jelszo" required><button type="submit" class="login-btn">Belepes</button></form><div class="switch-link">Nincs meg fiokod? <a href="/regisztracio">Regisztralj itt!</a></div></div>`);
 });
-
 app.get('/regisztracio', (req, res) => {
   res.send(getMenu() + getStyle() + `<style>.reg-container{max-width:500px;margin:50px auto;background:white;padding:40px;border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,0.2);position:relative;z-index:10;}.reg-form input{width:100%;padding:12px;margin:10px 0;border:2px solid #667eea;border-radius:8px;font-size:16px}.file-input-wrapper{margin:20px 0;padding:20px;border:2px dashed #667eea;border-radius:8px;text-align:center;cursor:pointer}.preview-container{margin:20px 0;text-align:center}.preview-img{width:150px;height:150px;border-radius:50%;object-fit:cover;border:3px solid #667eea;display:none}.default-avatar{width:150px;height:150px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:60px;font-weight:bold;margin:0 auto}.reg-btn{width:100%;padding:15px;background:#667eea;color:white;border:none;border-radius:8px;font-size:18px;font-weight:bold;cursor:pointer;margin-top:10px}.reg-btn:hover{background:#5568d3}.error-msg{color:red;text-align:center;margin:10px 0;display:none}</style><div class="reg-container"><h1 style="color:#667eea;text-align:center;">&#128221; Regisztracio</h1><form class="reg-form" id="regForm" onsubmit="return handleRegister(event)"><input type="text" id="felhasznalonev" placeholder="Felhasznalonev" required minlength="3"><input type="password" id="jelszo" placeholder="Jelszo" required minlength="4"><div class="file-input-wrapper" onclick="document.getElementById('profilkep').click()">&#128247; Profilkep (max 500 KB)</div><input type="file" id="profilkep" accept="image/png,image/jpeg" style="display:none;" onchange="previewImage(event)"><div class="preview-container"><p><strong>Elonezet:</strong></p><img id="preview" class="preview-img"><div id="defaultAvatar" class="default-avatar">?</div></div><div class="error-msg" id="errorMsg"></div><button type="submit" class="reg-btn">Regisztracio</button></form></div><script>let profilkepData=null;document.getElementById('felhasznalonev').addEventListener('input',function(e){const nev=e.target.value;if(nev&&!profilkepData)document.getElementById('defaultAvatar').textContent=nev.charAt(0).toUpperCase()});function previewImage(event){const file=event.target.files[0];if(!file)return;if(file.size>512000){document.getElementById('errorMsg').textContent='Tul nagy!';document.getElementById('errorMsg').style.display='block';event.target.value='';return}document.getElementById('errorMsg').style.display='none';const reader=new FileReader();reader.onload=function(e){profilkepData=e.target.result;document.getElementById('preview').src=profilkepData;document.getElementById('preview').style.display='block';document.getElementById('defaultAvatar').style.display='none'};reader.readAsDataURL(file)}async function handleRegister(event){event.preventDefault();const felhasznalonev=document.getElementById('felhasznalonev').value;const jelszo=document.getElementById('jelszo').value;try{const response=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({felhasznalonev,jelszo,profilkep:profilkepData})});const result=await response.json();if(result.siker){alert('Sikeres regisztracio!');window.location.href='/bejelentkezes'}else{document.getElementById('errorMsg').textContent='Hiba: '+result.uzenet;document.getElementById('errorMsg').style.display='block'}}catch(error){document.getElementById('errorMsg').textContent='Hiba!';document.getElementById('errorMsg').style.display='block'}return false}</script>`);
 });
-
 app.get('/uzenofal', async (req, res) => {
   let uzenetek = [];
   try {
@@ -529,7 +482,6 @@ app.get('/uzenofal', async (req, res) => {
   });
   res.send(getStyle() + getMenu() + `<div class="container"><h1>&#128172; Uzenofal</h1><h2 style="color:#667eea;">Uzenetek (${uzenetek.length} db):</h2><div id="uzenet-form-container"></div><div>${uzenetLista || '<p style="text-align:center;color:#999;">Meg nincs uzenet.</p>'}</div></div><script>(function(){const userData=JSON.parse(localStorage.getItem('bejelentkezve')||'null');const container=document.getElementById('uzenet-form-container');if(userData){container.innerHTML='<h2 style="color:#667eea;margin-top:30px;">Uj uzenet:</h2><form action="/uj-uzenet" method="POST" style="margin-top:20px;"><input type="hidden" name="felhasznalonev" value="'+userData.felhasznalonev+'"><input type="hidden" name="profilkep" value="'+(userData.profilkep||'')+'"><input type="text" name="uzenet" required placeholder="Ird ide..." style="width:70%;padding:15px;font-size:16px;border:2px solid #667eea;border-radius:10px;margin-right:10px;"><button type="submit" style="padding:15px 30px;background:#667eea;color:white;border:none;border-radius:10px;font-size:16px;cursor:pointer;font-weight:bold;">Kuldes</button></form>'}else{container.innerHTML='<div style="background:#fffacd;padding:20px;border-radius:10px;text-align:center;margin:20px 0;"><p style="font-size:18px;color:#666;"><strong>Jelentkezz be</strong> hogy uzenetet irj!</p><a href="/bejelentkezes" style="display:inline-block;margin-top:10px;padding:10px 20px;background:#667eea;color:white;text-decoration:none;border-radius:8px;font-weight:bold;">Bejelentkezes</a></div>'}})();</script>`);
 });
-
 app.post('/uj-uzenet', async (req, res) => {
   try {
     if (!uzenetekCollection) return res.send('MongoDB nincs csatlakozva!');
@@ -544,7 +496,6 @@ app.post('/uj-uzenet', async (req, res) => {
     res.send('Hiba!');
   }
 });
-
 app.post('/api/register', async (req, res) => {
   try {
     if (!db) return res.json({ siker: false, uzenet: 'MongoDB nincs csatlakozva!' });
@@ -557,7 +508,6 @@ app.post('/api/register', async (req, res) => {
     res.json({ siker: false, uzenet: 'Szerver hiba!' });
   }
 });
-
 app.post('/api/login', async (req, res) => {
   try {
     if (!db) return res.send(getMenu() + getStyle() + '<div class="container"><h1 style="color:red;">MongoDB nincs csatlakozva!</h1></div>');
@@ -575,136 +525,127 @@ app.post('/api/login', async (req, res) => {
     res.send(getMenu() + getStyle() + '<div class="container"><h1 style="color:red;">Hiba!</h1></div>');
   }
 });
-
 app.get('/kijelentkezes', (req, res) => {
   res.send(getMenu() + getStyle() + '<div class="container"><h1 style="color:#667eea;">Kijelentkezes...</h1></div><script>localStorage.removeItem("bejelentkezve");setTimeout(()=>{window.location.href="/"},1000)</script>');
 });
-
 // ============================================================
-// TENGERIMALAC KALAND 3.0 – JAVÍTOTT 3D VERZIÓ
+// TENGERIMALAC KALAND
 // ============================================================
-
+function getGameStyle() {
+  return `<style>
+    .game-container { max-width:750px; margin:0 auto; background:white; padding:40px; border-radius:20px; box-shadow:0 20px 60px rgba(0,0,0,0.3); position:relative; z-index:5; }
+    .game-title { color:#667eea; font-size:36px; margin-bottom:10px; text-align:center; }
+    .game-scene { background:linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%); border-radius:15px; padding:25px; margin:20px 0; font-size:18px; line-height:1.8; color:#333; border-left:5px solid #667eea; }
+    .game-scene .emoji-big { font-size:50px; display:block; text-align:center; margin-bottom:10px; }
+    .game-choices { display:flex; flex-wrap:wrap; gap:12px; margin-top:20px; justify-content:center; }
+    .game-choice { display:inline-block; padding:14px 22px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; text-decoration:none; border-radius:12px; font-size:16px; font-weight:bold; transition:all 0.3s; box-shadow:0 4px 12px rgba(102,126,234,0.4); cursor:pointer; }
+    .game-choice:hover { transform:translateY(-3px); box-shadow:0 8px 20px rgba(102,126,234,0.6); }
+    .game-end-bad { background:linear-gradient(135deg,#ff6b6b,#ee5a24); color:white; border-radius:15px; padding:25px; text-align:center; font-size:22px; font-weight:bold; margin:20px 0; }
+    .game-end-good { background:linear-gradient(135deg,#55efc4,#00b894); color:white; border-radius:15px; padding:25px; text-align:center; font-size:22px; font-weight:bold; margin:20px 0; }
+    .finish-badge { background:gold; color:#333; border-radius:10px; padding:10px 20px; font-size:18px; margin:10px 0; display:inline-block; }
+    .level-info { background:rgba(102,126,234,0.1); border-radius:10px; padding:10px 20px; margin-bottom:15px; text-align:center; font-size:16px; color:#667eea; font-weight:bold; }
+    .finishes-bar { background:#f0f0f0; border-radius:10px; padding:15px; margin:15px 0; }
+    .finish-item { display:inline-block; margin:4px; padding:6px 12px; border-radius:8px; font-size:14px; }
+    .finish-done { background:#55efc4; color:#00695c; }
+    .finish-todo { background:#ddd; color:#999; }
+    .win-screen { background:linear-gradient(135deg,#f9ca24,#f0932b); color:white; border-radius:20px; padding:40px; text-align:center; }
+    .win-screen h2 { font-size:40px; margin-bottom:10px; }
+  </style>`;
+}
+const FINISHES = ['Auchanos malackaja', 'Finom Fuge', 'Guinea a Guineaban', 'minek pazaroltál erre egymilliót?'];
+const TOTAL_LEVELS = 10;
+function parseState(query) {
+  const level = parseInt(query.level) || 1;
+  const victoryPoints = parseInt(query.vp) || 0;
+  let finishes = [];
+  try { finishes = JSON.parse(decodeURIComponent(query.f || '[]')); } catch(e) { finishes = []; }
+  const name = decodeURIComponent(query.name || '');
+  return { level, victoryPoints, finishes, name };
+}
+function buildUrl(scene, state, extra) {
+  const params = new URLSearchParams({ scene, level: state.level, vp: state.victoryPoints, f: encodeURIComponent(JSON.stringify(state.finishes)), name: encodeURIComponent(state.name), ...extra });
+  return '/tengerimalac-jatek?' + params.toString();
+}
+function addFinish(state, finish) {
+  if (!state.finishes.includes(finish)) return { ...state, finishes: [...state.finishes, finish] };
+  return state;
+}
+function allFinishesUnlocked(state) { return FINISHES.every(f => state.finishes.includes(f)); }
+function renderFinishes(state) {
+  return `<div class="finishes-bar">&#127942; Finishek: ` +
+    FINISHES.map(f => `<span class="finish-item ${state.finishes.includes(f)?'finish-done':'finish-todo'}">${state.finishes.includes(f)?'✅':'🔒'} ${f}</span>`).join('') + `</div>`;
+}
+function renderGame(state, emoji, szoveg, valasztasok) {
+  const info = `<div class="level-info">📊 ${state.level}. szint | 🏆 Győzelmi pontok: ${state.victoryPoints} | 🐹 Malac neve: <strong>${state.name||'???'}</strong></div>`;
+  const choices = valasztasok.map(v=>`<a class="game-choice" href="${v.url}">${v.label}</a>`).join('');
+  return getGameStyle()+getMenu()+getStyle()+`<div class="game-container"><h1 class="game-title">🐹 Tengerimalac Kaland</h1>${info}${renderFinishes(state)}<div class="game-scene"><span class="emoji-big">${emoji}</span><p>${szoveg}</p></div><div class="game-choices">${choices}</div></div>`;
+}
+function renderEnd(state, type, szoveg, extra) {
+  const info = `<div class="level-info">📊 ${state.level}. szint | 🏆 Győzelmi pontok: ${state.victoryPoints} | 🐹 Malac neve: <strong>${state.name||'???'}</strong></div>`;
+  const endDiv = type==='bad'
+    ? `<div class="game-end-bad">💀 VÉGE!<br><br>${szoveg}</div>`
+    : `<div class="game-end-good">🎉 GRATULÁLUNK!<br><br>${szoveg}${extra?'<br><br><span class="finish-badge">🏅 Feloldva: '+extra+'</span>':''}</div>`;
+  return getGameStyle()+getMenu()+getStyle()+`<div class="game-container"><h1 class="game-title">🐹 Tengerimalac Kaland</h1>${info}${renderFinishes(state)}${endDiv}<div class="game-choices"><a class="game-choice" href="${buildUrl('ketrec',state)}">🔄 Újra próbálom</a><a class="game-choice" href="/jatekok">🎮 Vissza a játékokhoz</a></div></div>`;
+}
+function renderWin(state) {
+  return getGameStyle()+getMenu()+getStyle()+`<div class="game-container"><div class="win-screen"><h2>🏆 KIVITTED A JÁTÉKOT! 🏆</h2><p style="font-size:24px;">Minden szinten megszerezted az összes finisht!</p><p style="font-size:20px;margin-top:15px;">Győzelmi pontjaid: <strong>${state.victoryPoints}</strong></p><p style="font-size:60px;">🐹🎉🥳</p></div><div class="game-choices" style="margin-top:20px;"><a class="game-choice" href="/jatekok">🎮 Vissza a játékokhoz</a></div></div>`;
+}
 app.get('/tengerimalac-jatek', (req, res) => {
-  const scene = req.query.scene || 'ketrec';
+  const scene = req.query.scene || 'start';
   const state = parseState(req.query);
-
-  const html = getGameStyle() + getMenu() + `
-    <div id="ui">
-      <div class="game-title">🐹 Tengerimalac Kaland 3D</div>
-      <div class="level-info">📊 ${state.level}. szint | 🏆 Győzelmi pontok: ${state.victoryPoints} | 🐹 ${state.name || 'Névtelen malac'}</div>
-      ${renderFinishes(state)}
-      
-      <div id="description" style="font-size:19px; margin:20px 0; min-height:100px;"></div>
-      <div class="choices" id="choices" style="margin-top:20px;"></div>
-      <div id="endMessage"></div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-    <script>
-      let scene3d, camera, renderer, malacBody;
-
-      function init3D() {
-        scene3d = new THREE.Scene();
-        scene3d.background = new THREE.Color(0x88ccff);
-
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({antialias: true});
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        // Fények
-        scene3d.add(new THREE.AmbientLight(0xaaaaaa));
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(10, 15, 10);
-        scene3d.add(light);
-
-        // Padló
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(40,40), new THREE.MeshLambertMaterial({color: 0xdddddd}));
-        floor.rotation.x = -Math.PI/2;
-        scene3d.add(floor);
-
-        // Ketrec
-        const cage = new THREE.Mesh(new THREE.BoxGeometry(6,5,6), new THREE.MeshLambertMaterial({color:0x555555, wireframe:true}));
-        cage.position.set(0, 2.5, -8);
-        scene3d.add(cage);
-
-        // Malac
-        malacBody = new THREE.Mesh(new THREE.SphereGeometry(0.9, 32, 32), new THREE.MeshLambertMaterial({color: 0xffcc88}));
-        malacBody.position.set(0, 0.9, -8);
-        scene3d.add(malacBody);
-
-        camera.position.set(4, 8, 16);
-        camera.lookAt(0, 1.5, -8);
-      }
-
-      function animate() {
-        requestAnimationFrame(animate);
-        if (malacBody) malacBody.rotation.y += 0.007;
-        if (renderer) renderer.render(scene3d, camera);
-      }
-
-      function updateUI(desc, choices = [], endMsg = '') {
-        document.getElementById('description').innerHTML = desc;
-        const div = document.getElementById('choices');
-        div.innerHTML = '';
-        choices.forEach(c => {
-          const btn = document.createElement('button');
-          btn.className = 'choice-btn';
-          btn.textContent = c.text;
-          btn.onclick = () => location.href = c.url;
-          div.appendChild(btn);
-        });
-        document.getElementById('endMessage').innerHTML = endMsg;
-      }
-
-      // Ablak átméretezés
-      window.addEventListener('resize', () => {
-        if (camera && renderer) {
-          camera.aspect = window.innerWidth / window.innerHeight;
-          camera.updateProjectionMatrix();
-          renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-      });
-
-      // Indítás
-      window.onload = () => {
-        init3D();
-        animate();
-
-        const currentScene = "${scene}";
-        const name = "${state.name || 'grok'}";
-
-        if (currentScene === 'ketrec') {
-          updateUI(
-            \`Szia, <strong>\${name}</strong>!<br>A gazdád nyitva hagyta a ketreced ajtaját.<br><br>Mit csinálsz?\`,
-            [
-              {text: '🛌 Bent maradok', url: '${buildUrl('ketrec_vege', state)}'},
-              {text: '🛋️ Nappaliba megyek', url: '${buildUrl('nappali', state)}'},
-              {text: '🚗 Garázsba megyek', url: '${buildUrl('garazs', state)}'},
-              {text: '🚽 WC-be megyek', url: '${buildUrl('wc', state)}'},
-              {text: '🛗 Liftbe megyek', url: '${buildUrl('lift', state)}'}
-            ]
-          );
-        } else if (currentScene === 'ketrec_vege') {
-          updateUI('', [], '<div class="end-message vege">💥 VÉGE!<br><br>Összeverekedtél egy másik malaccal az uborkán!</div>');
-        } else if (currentScene === 'garazs') {
-          updateUI('A garázsban vagy...', [
-            {text: '⚫ Kiszóródott golyók', url: '${buildUrl('garazs_golyo', state)}'},
-            {text: '📦 Bolti cucc', url: '${buildUrl('garazs_malackaja', state)}'}
-          ]);
-        } else {
-          updateUI('Ez a scene még fejlesztés alatt van...', [], '<a href="${buildUrl('ketrec', state)}" style="color:#667eea; font-size:18px;">← Vissza a ketrecbe</a>');
-        }
-      };
-    <\/script>
-  `;
-
-  res.send(html);
+  if (scene==='start') return res.send(getGameStyle()+getMenu()+getStyle()+`<div class="game-container"><h1 class="game-title">🐹 Tengerimalac Kaland</h1><div class="game-scene"><span class="emoji-big">🐹</span><p>Egy kertes ház nappalijában egy ketrecben élsz tengerimalacként.<br><br>Add meg a neved!</p></div><form method="GET" action="/tengerimalac-jatek" style="text-align:center;margin-top:20px;"><input type="hidden" name="scene" value="ketrec"><input type="hidden" name="level" value="1"><input type="hidden" name="vp" value="0"><input type="hidden" name="f" value="${encodeURIComponent('[]')}"><input type="text" name="name" placeholder="A malac neve..." required style="padding:14px;font-size:18px;border:2px solid #667eea;border-radius:10px;width:280px;margin-right:10px;"><button type="submit" class="game-choice" style="border:none;">✅ Ez vagyok én!</button></form></div>`);
+  if (scene==='ketrec') return res.send(renderGame(state,'🐹🏠',`Szia, <strong>${state.name||'Névtelen malac'}</strong>! A gazdád nyitva hagyta a ketreced ajtaját. Mit csinálsz?`,[{label:'🛌 Bent maradok',url:buildUrl('ketrec_vege',state)},{label:'🛋️ Nappaliba megyek',url:buildUrl('nappali',state)},{label:'🚗 Garázsba megyek',url:buildUrl('garazs',state)},{label:'🚽 WC-be megyek',url:buildUrl('wc',state)},{label:'🛗 Liftbe megyek',url:buildUrl('lift',state)}]));
+  if (scene==='ketrec_vege') return res.send(renderEnd(state,'bad','összeverekedtél egy másik malaccal az uborkán!'));
+  if (scene==='nappali') return res.send(renderGame(state,'🧝',`A nappaliban találkozol a <strong>Játék Manóval</strong>!`,[{label:'👊 Félek és leütöm!',url:buildUrl('nappali_leutes',state)},{label:'👂 Meghallgatom',url:buildUrl('nappali_meghallgat',state)}]));
+  if (scene==='nappali_leutes') return res.send(renderEnd(state,'bad','leütötted Játék Manót – ezért elvarázsolt!'));
+  if (scene==='nappali_meghallgat') return res.send(renderGame(state,'🚪✨',`A Játék Manó megmutat egy <strong>titkos átjárót</strong>. Ezen muszáj átmenned.`,[{label:'🚪 Átmegyek',url:buildUrl('kinai_nappali',state)}]));
+  if (scene==='kinai_nappali') return res.send(renderEnd(state,'bad','átjutottál a kínaiékhoz – és ők megettek!'));
+  if (scene==='garazs') return res.send(renderGame(state,'🚗🔧',`A garázsban <strong>kiszóródott golyókat</strong> látsz és egy ismeretlen dobozt a gazdádtól.`,[{label:'⚫ Megeszem a golyókat',url:buildUrl('garazs_golyo',state)},{label:'📦 Megeszem a boltban vett dolgot',url:buildUrl('garazs_malackaja',state)}]));
+  if (scene==='garazs_golyo') return res.send(renderEnd(state,'bad','megetted a patkánymérget!'));
+  if (scene==='garazs_malackaja') {
+    const s2 = addFinish(state,'Auchanos malackaja');
+    if (allFinishesUnlocked(s2)) { const ns={...s2,victoryPoints:s2.victoryPoints+1,level:s2.level+1,finishes:[]}; if(ns.level>TOTAL_LEVELS) return res.send(renderWin(ns)); return res.send(renderEnd(s2,'good','tengerimalac kaja volt, jóllaktál! 🎊 +1 győzelmi pont! Következő szint: '+ns.level,'Auchanos malackaja')); }
+    return res.send(renderEnd(s2,'good','tengerimalac kaja volt, jóllaktál!','Auchanos malackaja'));
+  }
+  if (scene==='wc') return res.send(renderGame(state,'🚽🧟',`A WC-ben találkozol a <strong>Kakimanóval</strong>! "Kövesd a Kakimanót!"`,[{label:'🚽 Követem',url:buildUrl('wc_kovetes',state)},{label:'🚶 Tovább megyek',url:buildUrl('garazs',state)}]));
+  if (scene==='wc_kovetes') return res.send(renderEnd(state,'bad','beugrottál a WC-lefolyóba!'));
+  if (scene==='lift') return res.send(renderGame(state,'🛗',`Melyik szintre mész?`,[{label:'⬆️ 1. emelet',url:buildUrl('emelet1',state)},{label:'⬇️ -1. szint (pince)',url:buildUrl('pince',state)}]));
+  if (scene==='pince') return res.send(renderGame(state,'🌑😨',`A pincében <strong>fura hangot</strong> hallasz és <strong>illatos golyókat</strong> látsz.`,[{label:'👂 A hang felé megyek',url:buildUrl('pince_hang',state)},{label:'🍬 Megeszem a golyókat',url:buildUrl('pince_golyo',state)}]));
+  if (scene==='pince_hang') return res.send(renderEnd(state,'bad','nem hallottad, hogy FURA hang? Rád ugrott egy patkány!'));
+  if (scene==='pince_golyo') return res.send(renderEnd(state,'bad','patkányméreg! Gondolkozz mielőtt cselekedsz!'));
+  if (scene==='emelet1') return res.send(renderGame(state,'🏠1️⃣',`Az 1. emeleten két szoba van.`,[{label:'🔵 Kék szoba',url:buildUrl('kek_szoba',state)},{label:'🩷 Rózsaszín szoba',url:buildUrl('rozsaszin_szoba',state)}]));
+  if (scene==='kek_szoba') return res.send(renderGame(state,'🔵🛏️',`A kék szobából kimehetsz az <strong>erkélyre</strong>.`,[{label:'🏠 Kimegyek az erkélyre',url:buildUrl('erkely',state)}]));
+  if (scene==='erkely') return res.send(renderGame(state,'🌿🏡',`Az erkélyről le kell jutnod a kertbe. Hogyan?`,[{label:'🪁 Papírsárkányon',url:buildUrl('kert',state)},{label:'🪜 A létrán',url:buildUrl('erkely_latra',state)}]));
+  if (scene==='erkely_latra') return res.send(renderEnd(state,'bad','lent nem volt rögzítve a létra! Legközelebb nézd meg hova lépsz…'));
+  if (scene==='kert') return res.send(renderGame(state,'🌳🌻',`Sikeresen landoltál a kertben! Merre mész?`,[{label:'🚗 Kimegyek az utcára',url:buildUrl('kert_utca',state)},{label:'🌿 Megyek a kerítéshez',url:buildUrl('kert_kerites',state)},{label:'🥬 Megyek a veteményeshez',url:buildUrl('vetemeny',state)}]));
+  if (scene==='kert_utca') return res.send(renderEnd(state,'bad','elütött az autó!'));
+  if (scene==='kert_kerites') return res.send(renderEnd(state,'bad','a kutya megharapott!'));
+  if (scene==='vetemeny') return res.send(renderGame(state,'🥦🌱',`A veteményesnél egy <strong>hinta</strong> is áll.`,[{label:'🎠 Felszállok a hintára',url:buildUrl('hinta',state)},{label:'🚶 Tovább megyek',url:buildUrl('fuge',state)}]));
+  if (scene==='hinta') return res.send(renderEnd(state,'bad','átrepültél a gazdád kínai szomszédjához, ahol megettek!'));
+  if (scene==='fuge') {
+    const s2 = addFinish(state,'Finom Fuge');
+    if (allFinishesUnlocked(s2)) { const ns={...s2,victoryPoints:s2.victoryPoints+1,level:s2.level+1,finishes:[]}; if(ns.level>TOTAL_LEVELS) return res.send(renderWin(ns)); return res.send(renderEnd(s2,'good','megtaláltad a fügebokrot és megetted az összes fügét! 🎊 +1 győzelmi pont!','Finom Fuge')); }
+    return res.send(renderEnd(s2,'good','megtaláltad a fügebokrot és megetted az összes fügét!','Finom Fuge'));
+  }
+  if (scene==='rozsaszin_szoba') return res.send(renderGame(state,'🩷✈️',`A rózsaszín szobában van egy <strong>játékrepülő</strong>!`,[{label:'🚌 Megyek a buszállomásra',url:buildUrl('buszallomas',state)}]));
+  if (scene==='buszallomas') return res.send(renderGame(state,'✈️🌍',`A repülőtérről hova repülsz?`,[{label:'🌏 Pápua-Új Guinea',url:buildUrl('papua',state)},{label:'🇭🇺 Magyarország',url:buildUrl('magyarorszag',state)},{label:'🌐 Más ország',url:buildUrl('mas_orszag',state)}]));
+  if (scene==='papua') {
+    const s2 = addFinish(state,'Guinea a Guineaban');
+    if (allFinishesUnlocked(s2)) { const ns={...s2,victoryPoints:s2.victoryPoints+1,level:s2.level+1,finishes:[]}; if(ns.level>TOTAL_LEVELS) return res.send(renderWin(ns)); return res.send(renderEnd(s2,'good','Guineaként elmentél Guineába! 🎊 +1 győzelmi pont!','Guinea a Guineaban')); }
+    return res.send(renderEnd(s2,'good','Guineaként elmentél Guineába!','Guinea a Guineaban'));
+  }
+  if (scene==='magyarorszag') {
+    const s2 = addFinish(state,'minek pazaroltál erre egymilliót?');
+    if (allFinishesUnlocked(s2)) { const ns={...s2,victoryPoints:s2.victoryPoints+1,level:s2.level+1,finishes:[]}; if(ns.level>TOTAL_LEVELS) return res.send(renderWin(ns)); return res.send(renderEnd(s2,'good','mondjuk ide autóval is el tudtál volna jönni… 🎊 +1 győzelmi pont!','minek pazaroltál erre egymilliót?')); }
+    return res.send(renderEnd(s2,'good','mondjuk ide autóval is el tudtál volna jönni…','minek pazaroltál erre egymilliót?'));
+  }
+  if (scene==='mas_orszag') return res.send(renderGame(state,'🌐✈️',`Egy ismeretlen országba repülsz... semmi érdekes.`,[{label:'✈️ Visszamegyek',url:buildUrl('buszallomas',state)}]));
+  if (scene==='win') return res.send(renderWin(state));
+  res.redirect('/tengerimalac-jatek');
 });
 // ============================================================
 // TOBBI JATEK
 // ============================================================
-
 app.get('/tetris', (req, res) => { res.send(getStyle()+getMenu()+'<div class="container"><h1>🟦 Tetris</h1><p>A játék hamarosan elérhető!</p></div>'); });
 app.get('/snake', (req, res) => { res.send(getStyle()+getMenu()+'<div class="container"><h1>🐍 Snake</h1><p>A játék hamarosan elérhető!</p></div>'); });
 app.get('/labirintus', (req, res) => { res.send(getStyle()+getMenu()+'<div class="container"><h1>🎯 Labirintus</h1><p>A játék hamarosan elérhető!</p></div>'); });
