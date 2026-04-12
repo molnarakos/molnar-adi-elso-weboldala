@@ -581,36 +581,12 @@ app.get('/kijelentkezes', (req, res) => {
 });
 
 // ============================================================
-// TENGERIMALAC KALAND – 3D VERZIÓ
+// TENGERIMALAC KALAND – 3D VERZIÓ (JAVÍTOTT)
 // ============================================================
-
-function getGameStyle() {
-  return `<style>
-    body { margin:0; overflow:hidden; font-family:'Segoe UI',sans-serif; }
-    #ui {
-      position: absolute; top: 10px; left: 10px; right: 10px; z-index: 100;
-      background: rgba(255,255,255,0.95); padding: 15px; border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-width: 800px; margin: 0 auto;
-    }
-    .game-title { color:#667eea; font-size:36px; text-align:center; margin-bottom:8px; }
-    #description { font-size:19px; margin:15px 0; line-height:1.6; }
-    .choices { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:20px; }
-    .choice-btn {
-      padding:16px 24px; font-size:18px; background:linear-gradient(135deg,#667eea,#764ba2);
-      color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold;
-      box-shadow:0 4px 15px rgba(102,126,234,0.4); transition:all 0.3s;
-    }
-    .choice-btn:hover { transform:translateY(-4px); box-shadow:0 8px 25px rgba(102,126,234,0.6); }
-    .end-message { font-size:28px; padding:25px; border-radius:15px; margin:20px 0; text-align:center; }
-    .vege { background:#ff6b6b; color:white; }
-    .gratulalunk { background:#00b894; color:white; }
-    .level-info { text-align:center; font-size:17px; color:#667eea; font-weight:bold; margin-bottom:10px; }
-  </style>`;
-}
 
 app.get('/tengerimalac-jatek', (req, res) => {
   const scene = req.query.scene || 'ketrec';
-  const state = parseState(req.query);   // a meglévő parseState függvényedet használjuk
+  const state = parseState(req.query);
 
   let html = getGameStyle() + getMenu() + `
     <div id="ui">
@@ -618,57 +594,67 @@ app.get('/tengerimalac-jatek', (req, res) => {
       <div class="level-info">📊 ${state.level}. szint | 🏆 Győzelmi pontok: ${state.victoryPoints} | 🐹 ${state.name || 'Névtelen malac'}</div>
       ${renderFinishes(state)}
       
-      <div id="description"></div>
+      <div id="description" style="font-size:19px; margin:20px 0; min-height:80px;"></div>
       <div class="choices" id="choices"></div>
       <div id="endMessage"></div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script>
-      // === THREE.JS 3D RÉSZ ===
-      const scene3d = new THREE.Scene();
-      scene3d.background = new THREE.Color(0x88ccff);
-      const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({antialias:true});
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+      // Three.js setup
+      let scene3d, camera, renderer, malac;
 
-      // Fény
-      scene3d.add(new THREE.AmbientLight(0xaaaaaa));
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-      dirLight.position.set(10, 15, 10);
-      scene3d.add(dirLight);
+      function init3D() {
+        scene3d = new THREE.Scene();
+        scene3d.background = new THREE.Color(0x88ccff);
 
-      // Padló
-      const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(30, 30),
-        new THREE.MeshLambertMaterial({color: 0xeeeeee})
-      );
-      floor.rotation.x = -Math.PI/2;
-      scene3d.add(floor);
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-      // Ketrec (drót)
-      const cage = new THREE.Mesh(
-        new THREE.BoxGeometry(5, 4, 5),
-        new THREE.MeshLambertMaterial({color: 0x555555, wireframe: true})
-      );
-      cage.position.set(0, 2, -6);
-      scene3d.add(cage);
+        // Fények
+        scene3d.add(new THREE.AmbientLight(0xaaaaaa));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(8, 12, 10);
+        scene3d.add(dirLight);
 
-      // Tengerimalac (egyszerű modell – később lecserélheted)
-      const malacBody = new THREE.Mesh(
-        new THREE.SphereGeometry(0.8, 32, 32),
-        new THREE.MeshLambertMaterial({color: 0xffcc88})
-      );
-      malacBody.position.set(0, 0.8, -6);
-      scene3d.add(malacBody);
+        // Padló
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(40, 40),
+          new THREE.MeshLambertMaterial({ color: 0xdddddd })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        scene3d.add(floor);
 
-      camera.position.set(0, 6, 12);
-      camera.lookAt(0, 1, -6);
+        // Ketrec
+        const cage = new THREE.Mesh(
+          new THREE.BoxGeometry(6, 5, 6),
+          new THREE.MeshLambertMaterial({ color: 0x555555, wireframe: true })
+        );
+        cage.position.set(0, 2.5, -8);
+        scene3d.add(cage);
 
-      let currentScene = "${scene}";
+        // Tengerimalac (sárga gömb)
+        malac = new THREE.Mesh(
+          new THREE.SphereGeometry(0.9, 32, 32),
+          new THREE.MeshLambertMaterial({ color: 0xffcc88 })
+        );
+        malac.position.set(0, 0.9, -8);
+        scene3d.add(malac);
 
-      function updateUI(desc, choices = [], endMsg = "") {
+        camera.position.set(3, 7, 15);
+        camera.lookAt(0, 1, -8);
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        if (malac) malac.rotation.y += 0.008;
+        if (renderer) renderer.render(scene3d, camera);
+      }
+
+      // UI frissítés
+      function updateUI(desc, choices = [], endMsg = '') {
         document.getElementById('description').innerHTML = desc;
         const chDiv = document.getElementById('choices');
         chDiv.innerHTML = '';
@@ -676,35 +662,31 @@ app.get('/tengerimalac-jatek', (req, res) => {
           const btn = document.createElement('button');
           btn.className = 'choice-btn';
           btn.textContent = c.text;
-          btn.onclick = () => window.location.href = c.url;
+          btn.onclick = () => location.href = c.url;
           chDiv.appendChild(btn);
         });
         document.getElementById('endMessage').innerHTML = endMsg;
       }
 
-      // Animáció
-      function animate() {
-        requestAnimationFrame(animate);
-        malacBody.rotation.y += 0.005;   // malac forgása
-        renderer.render(scene3d, camera);
-      }
-      animate();
-
       window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        if (camera && renderer) {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        }
       });
 
-      // === JÁTÉK LOGIKA (ugyanaz, mint eddig) ===
+      // Oldal betöltésekor indítás
+      window.onload = function() {
+        init3D();
+        animate();
     `;
 
   // Ketrec scene
   if (scene === 'ketrec') {
     html += `
-      <script>
         updateUI(
-          'Szia, <strong>${state.name}</strong>! A gazdád nyitva hagyta a ketreced ajtaját.<br>Most mit csinálsz?',
+          'Szia, <strong>${state.name}</strong>!<br>A gazdád nyitva hagyta a ketreced ajtaját.<br><br>Mit csinálsz most?',
           [
             {text: '🛌 Bent maradok', url: '${buildUrl('ketrec_vege', state)}'},
             {text: '🛋️ Nappaliba megyek', url: '${buildUrl('nappali', state)}'},
@@ -713,25 +695,26 @@ app.get('/tengerimalac-jatek', (req, res) => {
             {text: '🛗 Liftbe megyek', url: '${buildUrl('lift', state)}'}
           ]
         );
-      <\/script>`;
+      `;
   } 
-  // Példa: Bent marad (VÉGE)
   else if (scene === 'ketrec_vege') {
-    html += `<script>updateUI('', [], '<div class="end-message vege">💥 VÉGE!<br>Összeverekedtél egy másik malaccal az uborkán!</div>');</script>`;
+    html += `updateUI('', [], '<div class="end-message vege">💥 VÉGE!<br><br>Összeverekedtél egy másik malaccal az uborkán!</div>');`;
   } 
-  // Garázs példa
   else if (scene === 'garazs') {
-    html += `
-      <script>
-        updateUI('A garázsban vagy...', [
-          {text: '⚫ Kiszóródott golyókat eszem', url: '${buildUrl('garazs_golyo', state)}'},
-          {text: '📦 A bolti cuccot eszem', url: '${buildUrl('garazs_malackaja', state)}'}
-        ]);
-      <\/script>`;
+    html += `updateUI('A garázsban vagy...', [
+      {text: '⚫ Megeszem a kiszóródott golyókat', url: '${buildUrl('garazs_golyo', state)}'},
+      {text: '📦 Megeszem a bolti cuccot', url: '${buildUrl('garazs_malackaja', state)}'}
+    ]);`;
+  } 
+  else {
+    html += `updateUI('Ez a scene még fejlesztés alatt van...<br><br><a href="${buildUrl('ketrec', state)}" style="color:#667eea;">← Vissza a ketrecbe</a>');`;
   }
-  // További scene-eket ugyanígy bővítheted...
 
-  html += `</script></div>`;
+  html += `
+      };
+    <\/script>
+  `;
+
   res.send(html);
 });
 
