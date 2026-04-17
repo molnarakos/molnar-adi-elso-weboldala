@@ -3,192 +3,165 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// === MONGODB ATLAS (Írd be a jelszavadat!) ===
+// === MONGODB ATLAS CSATLAKOZÁS ===
 const uri = "mongodb+srv://molnarakosandras_db_user:sTsxhR9NPpsnSTvt@cluster0.bf08wp5.mongodb.net/?appName=Cluster0";
 
 const client = new MongoClient(uri, {
   serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true }
 });
 
-let db, uzenetekCollection, tengerimalacCollection;
+let db, uzenetekCollection, jatekAllapotCollection;
 
 async function connectDB() {
   try {
     await client.connect();
     db = client.db('elso-weboldalam');
     uzenetekCollection = db.collection('uzenetek');
-    tengerimalacCollection = db.collection('tengerimalac_statisztika');
-    console.log("✅ Atlas csatlakozva!");
-  } catch (e) { console.error("Adatbázis hiba:", e); }
+    jatekAllapotCollection = db.collection('jatek_allapot'); // Itt tároljuk a profilok adatait!
+    console.log("✅ Sikeresen csatlakoztunk a MongoDB Atlas-hoz!");
+  } catch (e) { console.error("Hiba:", e); }
 }
 connectDB();
 
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.json({ limit: '50mb' }));
 
-// === STÍLUS (Visszaraktam a te animált hátteredet!) ===
+// === STÍLUS ÉS MENÜ (A TE EREDETI KÓDOD) ===
 function getStyle() {
   return `<style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    @keyframes alapHatter {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
+    @keyframes alapHatter { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     body {
       font-family: 'Segoe UI', sans-serif;
       background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
       background-size: 400% 400%;
       animation: alapHatter 15s ease infinite;
-      color: white;
-      overflow-x: hidden;
+      color: white; min-height: 100vh;
     }
     nav { background: rgba(0,0,0,0.8); padding: 15px; text-align: center; border-bottom: 2px solid #ff4757; }
-    nav a { color: white; margin: 0 20px; text-decoration: none; font-weight: bold; }
-    .container { max-width: 1000px; margin: 20px auto; padding: 20px; background: rgba(0,0,0,0.6); border-radius: 20px; }
-    .btn { background: #ff4757; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; font-weight: bold; }
+    nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
+    .container { max-width: 900px; margin: 30px auto; padding: 25px; background: rgba(0,0,0,0.6); border-radius: 20px; backdrop-filter: blur(10px); text-align: center; }
+    .btn { background: #ff4757; color: white; padding: 12px 25px; border: none; border-radius: 10px; cursor: pointer; text-decoration: none; font-weight: bold; display: inline-block; margin: 10px; }
+    input { padding: 10px; border-radius: 5px; width: 80%; margin: 10px; border: none; }
   </style>`;
 }
 
 function getMenu() {
-  return `<nav><a href="/">🏠 Főoldal</a><a href="/uzenetfal">💬 Üzenőfal</a><a href="/tengerimalac-jatek">🚀 JÁTÉK</a></nav>`;
+  return `<nav><a href="/">🏠 Főoldal</a><a href="/uzenetfal">💬 Üzenőfal</a><a href="/tengerimalac-jatek">🚀 JÁTÉK</a><a href="/profil">👤 Profil</a></nav>`;
 }
 
-// === OLDALAK ===
-app.get('/', (req, res) => {
-  res.send(getStyle() + getMenu() + `<div class="container"><h1>Szia Ádi!</h1><p>Ez a profi 3D tengerimalacos oldalad.</p><br><a href="/tengerimalac-jatek" class="btn">🚀 INDÍTÁS</a></div>`);
+// === PROFIL RENDSZER (A TE KÓDOD ALAPJÁN) ===
+app.get('/profil', (req, res) => {
+  res.send(`${getStyle()}${getMenu()}
+    <div class="container">
+      <h2>👤 Profilod</h2>
+      <div id="profil-info">Ellenőrzés...</div>
+      <div id="login-box" style="display:none;">
+        <input type="text" id="p-name" placeholder="Írd be a neved...">
+        <button onclick="saveProfile()" class="btn">Belépés</button>
+      </div>
+      <script>
+        const u = localStorage.getItem('bejelentkezve');
+        if(u) {
+          document.getElementById('profil-info').innerHTML = "Bejelentkezve mint: <b>" + u + "</b><br><br><button onclick='localStorage.removeItem(\"bejelentkezve\"); location.reload();' class='btn'>Kijelentkezés</button>";
+        } else {
+          document.getElementById('login-box').style.display = "block";
+          document.getElementById('profil-info').innerText = "Nem vagy bejelentkezve.";
+        }
+        function saveProfile() {
+          const n = document.getElementById('p-name').value;
+          if(n) { localStorage.setItem('bejelentkezve', n); location.reload(); }
+        }
+      </script>
+    </div>`);
 });
 
-app.get('/uzenetfal', async (req, res) => {
-  const uzenetek = await uzenetekCollection.find().sort({ _id: -1 }).toArray();
-  let list = uzenetek.map(u => `<div style="background:rgba(0,0,0,0.3); padding:10px; margin:5px; border-radius:10px;"><b>${u.nev}:</b> ${u.szoveg}</div>`).join('');
-  res.send(getStyle() + getMenu() + `<div class="container"><h2>Üzenőfal</h2><form action="/api/uzenet" method="POST"><input name="nev" placeholder="Neved" style="width:100%; padding:10px; margin:5px 0;"><textarea name="szoveg" placeholder="Üzenet" style="width:100%; padding:10px; margin:5px 0;"></textarea><button class="btn">Küldés</button></form>${list}</div>`);
-});
-
-app.post('/api/uzenet', async (req, res) => {
-  await uzenetekCollection.insertOne(req.body);
-  res.redirect('/uzenetfal');
-});
-
-// === A 3D JÁTÉK (Szigetekkel és Fuel-lel) ===
+// === 3D JÁTÉK (Szigetek, Fuel, Mentés) ===
 app.get('/tengerimalac-jatek', (req, res) => {
   res.send(`
     ${getStyle()}
     ${getMenu()}
-    <div id="ui" style="position: absolute; top: 100px; left: 20px; z-index: 10; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; border: 2px solid #ff4757; width: 220px;">
-      <h3 style="color:#ff4757; margin-bottom:10px;">🐹 Galaxy Quest</h3>
+    <div id="ui" style="position: absolute; top: 100px; left: 20px; z-index: 10; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; border: 2px solid #ff4757; width: 230px;">
+      <h3 id="uName" style="color:#ff4757;">...</h3>
       <p>💰 Pénz: $<span id="mDisp">0</span></p>
       <p>🐹 Malacok: <span id="pCount">0</span></p>
       <p>⛽ Fuel: <span id="fDisp">100</span>%</p>
-      <div style="width:100%; height:8px; background:#333; margin-top:5px; border-radius:4px; overflow:hidden;">
-        <div id="fBar" style="width:100%; height:100%; background:lime; transition:0.3s;"></div>
+      <div style="width:100%; height:10px; background:#333; border-radius:5px; margin-top:5px; overflow:hidden;">
+        <div id="fBar" style="width:100%; height:100%; background:lime;"></div>
       </div>
-      <p id="fbi" style="color:red; display:none; font-weight:bold; margin-top:10px;">⚠️ FBI ÜLDÖZ!</p>
     </div>
-    <div id="game-hold"></div>
-
+    <div id="game-canvas"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-      let money = 0, fuel = 100, pigs = [], hasBlock = false, isFBI = false, currentReward = 0;
-      
+      const me = localStorage.getItem('bejelentkezve');
+      if(!me) { alert("Jelentkezz be a Profilnál!"); window.location.href="/profil"; }
+      document.getElementById('uName').innerText = me;
+
+      let money = 0, fuel = 100, pigs = 0, hasBlock = false, reward = 0;
+
+      // Betöltés Atlasból
+      fetch('/api/load/' + me).then(r => r.json()).then(d => {
+        money = d.money || 0; pigs = d.pigs || 0;
+      });
+
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 5000);
       const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
       renderer.setSize(window.innerWidth, window.innerHeight - 80);
-      document.getElementById('game-hold').appendChild(renderer.domElement);
+      document.getElementById('game-canvas').appendChild(renderer.domElement);
 
       scene.add(new THREE.AmbientLight(0xffffff, 1));
-
-      // Rakéta
       const rocket = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,2), new THREE.MeshStandardMaterial({color:0xff4757}));
-      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.5,1), new THREE.MeshStandardMaterial({color:0xffffff}));
-      nose.position.y = 1.5; rocket.add(body, nose);
-      rocket.rotation.x = Math.PI / 2;
-      scene.add(rocket);
+      rocket.add(new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,2), new THREE.MeshStandardMaterial({color:0xff4757})));
+      rocket.rotation.x = Math.PI/2; scene.add(rocket);
 
-      // Bázis
-      const base = new THREE.Mesh(new THREE.BoxGeometry(15,1,15), new THREE.MeshStandardMaterial({color:0x23a6d5}));
-      base.position.set(0, -5, 0); scene.add(base);
+      const base = new THREE.Mesh(new THREE.BoxGeometry(12,1,12), new THREE.MeshStandardMaterial({color:0x23a6d5}));
+      base.position.set(0,-5,0); scene.add(base);
 
-      // SZIGETEK LÉTREHOZÁSA
+      // SZIGETEK (Common, God, stb.)
       const islands = [];
-      const types = [
-        {n: 'Common', c: 0x2ed573, d: 150, r: 1},
-        {n: 'Rare', c: 0x3742fa, d: 300, r: 5},
-        {n: 'Epic', c: 0xa020f0, d: 500, r: 15},
-        {n: 'Legendary', c: 0xffa502, d: 800, r: 40},
-        {n: 'Mythic', c: 0xff4757, d: 1200, r: 100},
-        {n: 'God', c: 0xffff00, d: 1800, r: 500},
-        {n: 'OP', c: 0x00ffff, d: 2500, r: 2000}
-      ];
-
-      types.forEach(t => {
-        const angle = Math.random() * Math.PI * 2;
+      const data = [{n:'God', c:0xffff00, d:1200, r:100}, {n:'Rare', c:0x3742fa, d:400, r:10}, {n:'Common', c:0x2ed573, d:150, r:1}];
+      data.forEach(d => {
         const group = new THREE.Group();
-        const mesh = new THREE.Mesh(new THREE.SphereGeometry(6), new THREE.MeshStandardMaterial({color: t.c}));
-        const block = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshStandardMaterial({color: 0xffd700}));
-        block.position.y = 8; group.add(mesh, block);
-        group.position.set(Math.cos(angle)*t.d, 0, Math.sin(angle)*t.d);
-        group.userData = { name: t.n, reward: t.r, active: true };
+        group.add(new THREE.Mesh(new THREE.SphereGeometry(6), new THREE.MeshStandardMaterial({color:d.c})));
+        const b = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshStandardMaterial({color:0xffd700}));
+        b.position.y = 8; group.add(b);
+        group.position.set(Math.random()*d.d - d.d/2, 0, -d.d);
+        group.userData = { reward: d.r, active: true };
         scene.add(group); islands.push(group);
       });
 
-      const fbi = new THREE.Mesh(new THREE.BoxGeometry(3,1,5), new THREE.MeshStandardMaterial({color: 0x000000}));
-      fbi.position.set(5000,0,0); scene.add(fbi);
-
       const keys = {};
-      window.onkeydown=(e)=>keys[e.code]=true;
-      window.onkeyup=(e)=>keys[e.code]=false;
+      window.onkeydown=e=>keys[e.code]=true; window.onkeyup=e=>keys[e.code]=false;
 
       function animate() {
         requestAnimationFrame(animate);
-        
-        if(keys['KeyW'] && fuel > 0) {
-            rocket.translateY(1.2);
-            fuel -= 0.12; // Üzemanyag fogyás!
-        }
+        if(keys['KeyW'] && fuel > 0) { rocket.translateY(1.0); fuel -= 0.15; }
         if(keys['KeyA']) rocket.rotation.z += 0.05;
         if(keys['KeyD']) rocket.rotation.z -= 0.05;
 
-        // Ütközés szigetekkel
-        islands.forEach(isl => {
-          if(isl.userData.active && rocket.position.distanceTo(isl.position) < 8) {
-            isl.children[1].visible = false; isl.userData.active = false;
-            hasBlock = true; isFBI = true; currentReward = isl.userData.reward;
-            document.getElementById('fbi').style.display = 'block';
+        islands.forEach(i => {
+          if(i.userData.active && rocket.position.distanceTo(i.position) < 8) {
+            i.userData.active = false; i.children[1].visible = false;
+            hasBlock = true; reward = i.userData.reward;
           }
         });
 
-        // FBI Üldözés
-        if(isFBI) {
-          fbi.position.lerp(rocket.position, 0.015); fbi.lookAt(rocket.position);
-          if(fbi.position.distanceTo(rocket.position) < 3) { alert("FBI ELKAPOTT!"); location.reload(); }
+        if(rocket.position.distanceTo(base.position) < 10) {
+          fuel = 100;
+          if(hasBlock) { 
+            hasBlock = false; pigs += reward; 
+            fetch('/api/save', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:me, money, pigs})});
+          }
         }
-
-        // Bázis (Leadás és Tankolás)
-        if(rocket.position.distanceTo(base.position) < 12) {
-            fuel = 100; // Tankolás!
-            if(hasBlock) {
-                hasBlock = false; isFBI = false;
-                document.getElementById('fbi').style.display = 'none';
-                for(let i=0; i<currentReward; i++) pigs.push(1);
-                fbi.position.set(5000,0,0);
-                // Szigetek újraélednek
-                setTimeout(() => islands.forEach(i => {i.userData.active=true; i.children[1].visible=true;}), 5000);
-            }
-        }
-
-        // UI
-        document.getElementById('mDisp').innerText = Math.floor(money);
-        document.getElementById('pCount').innerText = pigs.length;
-        document.getElementById('fDisp').innerText = Math.max(0, Math.floor(fuel));
-        document.getElementById('fBar').style.width = fuel + "%";
-        document.getElementById('fBar').style.background = fuel < 30 ? "red" : "lime";
         
-        money += pigs.length * 0.1;
+        money += pigs * 0.05;
+        document.getElementById('mDisp').innerText = Math.floor(money);
+        document.getElementById('pCount').innerText = pigs;
+        document.getElementById('fDisp').innerText = Math.floor(fuel);
+        document.getElementById('fBar').style.width = fuel + "%";
 
-        camera.position.lerp(new THREE.Vector3(rocket.position.x, rocket.position.y+20, rocket.position.z+40), 0.1);
+        camera.position.lerp(new THREE.Vector3(rocket.position.x, rocket.position.y+15, rocket.position.z+30), 0.1);
         camera.lookAt(rocket.position);
         renderer.render(scene, camera);
       }
@@ -197,4 +170,32 @@ app.get('/tengerimalac-jatek', (req, res) => {
   `);
 });
 
-app.listen(port, () => console.log("Szerver fut!"));
+// === ATLAS API ===
+app.get('/api/load/:user', async (req, res) => {
+  const p = await jatekAllapotCollection.findOne({ username: req.params.user });
+  res.json(p || { money: 0, pigs: 0 });
+});
+
+app.post('/api/save', async (req, res) => {
+  const { username, money, pigs } = req.body;
+  await jatekAllapotCollection.updateOne({ username }, { $set: { money, pigs } }, { upsert: true });
+  res.json({ ok: true });
+});
+
+// === ÜZENŐFAL (A TE KÓDOD) ===
+app.get('/uzenetfal', async (req, res) => {
+  const uzenetek = await uzenetekCollection.find().sort({ _id: -1 }).toArray();
+  let list = uzenetek.map(u => `<div style="background:rgba(255,255,255,0.1); padding:10px; margin:5px; border-radius:10px;"><b>${u.nev}:</b> ${u.szoveg}</div>`).join('');
+  res.send(getStyle() + getMenu() + `<div class="container"><h2>Üzenőfal</h2><form action="/api/uzenet" method="POST"><input name="nev" placeholder="Neved"><textarea name="szoveg" placeholder="Üzenet" style="width:80%; height:60px;"></textarea><button class="btn">Küldés</button></form>${list}</div>`);
+});
+
+app.post('/api/uzenet', async (req, res) => {
+  await uzenetekCollection.insertOne(req.body);
+  res.redirect('/uzenetfal');
+});
+
+app.get('/', (req, res) => {
+  res.send(getStyle() + getMenu() + `<div class="container"><h1>Szia Ádi!</h1><p>Visszahoztuk a profilokat és az Atlas mentést!</p></div>`);
+});
+
+app.listen(port, () => console.log("Szerver elindult!"));
